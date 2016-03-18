@@ -6,9 +6,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.apache.derby.jdbc.EmbeddedDataSource;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by TomyAngelo on 9. 3. 2016.
@@ -16,15 +25,43 @@ import static org.hamcrest.CoreMatchers.*;
 public class CustomerManagerTest {
 
     private CustomerManagerImpl manager;
+    private DataSource dataSource;
 
-    @org.junit.Before
+    @Before
     public void setUp() throws Exception {
-        manager = new CustomerManagerImpl();
+        dataSource = prepareDataSource();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.prepareStatement("CREATE TABLE CUSTOMER ("
+                    + "id bigint primary key generated always as identity,"
+                    + "name varchar(255),"
+                    + "address varchar(255),"
+                    + "phoneNumber varchar(255))").executeUpdate();
+        }
+        manager = new CustomerManagerImpl(dataSource);
+    }
+
+    @Rule
+    // attribute annotated with @Rule annotation must be public :-(
+    public ExpectedException expectedException = ExpectedException.none();
+
+    @After
+    public void tearDown() throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.prepareStatement("DROP TABLE CUSTOMER").executeUpdate();
+        }
+    }
+
+    private static DataSource prepareDataSource() throws SQLException {
+        EmbeddedDataSource ds = new EmbeddedDataSource();
+        //we will use in memory database
+        ds.setDatabaseName("memory:customermgr-test");
+        ds.setCreateDatabase("create");
+        return ds;
     }
 
     @Test
     public void createCustomer(){
-        Customer customer = new Customer(10L,"Tomy","Brno 102", "0944999777");
+        Customer customer = new Customer("Tomy","Brno 102", "0944999777");
         manager.createCustomer(customer);
 
         Long customerId = customer.getId();
@@ -43,7 +80,7 @@ public class CustomerManagerTest {
 
     @Test
     public void createCustomerWithWrongArguments(){
-        Customer customer = new Customer(10L,"Tomy","Brno 102", "0944999777");
+        Customer customer = new Customer("Tomy","Brno 102", "0944999777");
         customer.setId(1L);
         try{
             manager.createCustomer(customer);
@@ -52,27 +89,27 @@ public class CustomerManagerTest {
             //OK
         }
 
-        customer = new Customer(10L , null , "Brno 102" , "0944999777");
+        customer = new Customer( null , "Brno 102" , "0944999777");
         try{
             manager.createCustomer(customer);
             fail("name cannot be null");
-        }catch(IllegalArgumentException ex){
+        }catch(NullPointerException ex){
             //OK
         }
 
-        customer = new Customer(10L , "Tomy" , null , "0944999777");
+        customer = new Customer( "Tomy" , null , "0944999777");
         try{
             manager.createCustomer(customer);
             fail("address cannot be null");
-        }catch(IllegalArgumentException ex){
+        }catch(NullPointerException ex){
             //OK
         }
 
-        customer = new Customer(10L , "Tomy" , "Brno 102" , null);
+        customer = new Customer( "Tomy" , "Brno 102" , null);
         try{
             manager.createCustomer(customer);
             fail("phoneNumber cannot be null");
-        }catch(IllegalArgumentException ex){
+        }catch(NullPointerException ex){
             //OK
         }
     }
@@ -80,8 +117,8 @@ public class CustomerManagerTest {
 
     @Test
     public void updateCustomer(){
-        Customer cus1 = new Customer(10L,"Tomy","Brno 102", "0944999777");
-        Customer cus2 = new Customer(10L,"Angelo","Brno 64", "0933888555");
+        Customer cus1 = new Customer("Tomy","Brno 102", "0944999777");
+        Customer cus2 = new Customer("Angelo","Brno 64", "0933888555");
         manager.createCustomer(cus1);
         manager.createCustomer(cus2);
         Long customerId = cus1.getId();
@@ -133,14 +170,14 @@ public class CustomerManagerTest {
 
     @Test
     public void updateCustomerWithWrongAttributes() {
-        Customer customer = new Customer(10L,"Tomy","Brno 102", "0944999777");
+        Customer customer = new Customer("Tomy","Brno 102", "0944999777");
         manager.createCustomer(customer);
         Long customerId = customer.getId();
 
         try {
             manager.updateCustomer(null);
             fail();
-        } catch (IllegalArgumentException ex) {
+        } catch (NullPointerException ex) {
             //OK
         }
 
@@ -149,7 +186,7 @@ public class CustomerManagerTest {
             customer.setId(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (IllegalArgumentException ex) {
+        } catch (NullPointerException ex) {
             //OK
         }
 
@@ -167,7 +204,7 @@ public class CustomerManagerTest {
             customer.setAddress(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (IllegalArgumentException ex) {
+        } catch (NullPointerException ex) {
             //OK
         }
 
@@ -176,7 +213,7 @@ public class CustomerManagerTest {
             customer.setName(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (IllegalArgumentException ex) {
+        } catch (NullPointerException ex) {
             //OK
         }
 
@@ -185,7 +222,7 @@ public class CustomerManagerTest {
             customer.setPhoneNumber(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (IllegalArgumentException ex) {
+        } catch (NullPointerException ex) {
             //OK
         }
 
@@ -193,10 +230,10 @@ public class CustomerManagerTest {
     }
 
     @Test
-    public void deleteGrave() {
+    public void deleteCustomer() {
 
-        Customer cus1 = new Customer(10L,"Tomy","Brno 102", "0944999777");
-        Customer cus2 = new Customer(10L,"Angelo","Brno 64", "0933888555");
+        Customer cus1 = new Customer("Tomy","Brno 102", "0944999777");
+        Customer cus2 = new Customer("Angelo","Brno 64", "0933888555");
         manager.createCustomer(cus1);
         manager.createCustomer(cus2);
 
@@ -210,9 +247,9 @@ public class CustomerManagerTest {
     }
 
     @Test
-    public void deleteGraveWithWrongAttributes() {
+    public void deleteCustomerWithWrongAttributes() {
 
-        Customer cus1 = new Customer(10L,"Tomy","Brno 102", "0944999777");
+        Customer cus1 = new Customer("Tomy","Brno 102", "0944999777");
 
         try {
             manager.deleteCustomer(null);
@@ -245,8 +282,8 @@ public class CustomerManagerTest {
     public void getAllCustomers(){
         assertTrue(manager.getAllCustomers().isEmpty());
 
-        Customer cus1 = new Customer(10L,"Tomy","Brno 102", "0944999777");
-        Customer cus2 = new Customer(10L,"Angelo","Brno 64", "0933888555");
+        Customer cus1 = new Customer("Tomy","Brno 102", "0944999777");
+        Customer cus2 = new Customer("Angelo","Brno 64", "0933888555");
 
         manager.createCustomer(cus1);
         manager.createCustomer(cus2);

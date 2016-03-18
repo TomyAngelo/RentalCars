@@ -7,11 +7,11 @@ import java.math.BigDecimal;
  */
 public class Car {
 
-    Long id;
-    String licensePlate;
-    String model;
-    BigDecimal price;
-    BigDecimal numberOfKM;
+    private Long id;
+    private String licensePlate;
+    private String model;
+    private BigDecimal price;
+    private BigDecimal numberOfKM;
 
     public Car(Long id, String licensePlate, String model, BigDecimal price, BigDecimal numberOfKM) {
         this.id = id;
@@ -19,6 +19,9 @@ public class Car {
         this.model = model;
         this.price = price;
         this.numberOfKM = numberOfKM;
+    }
+    public Car(){
+
     }
 
     public Long getId() {

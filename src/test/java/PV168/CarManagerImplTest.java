@@ -1,13 +1,19 @@
 package PV168;
 
+import org.apache.derby.jdbc.EmbeddedDataSource;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-
 import static org.junit.Assert.*;
 
 /**
@@ -16,10 +22,38 @@ import static org.junit.Assert.*;
 public class CarManagerImplTest {
 
     private CarManagerImpl manager;
+    private DataSource dataSource;
 
     @Before
     public void setUp() throws Exception {
-        manager = new CarManagerImpl();
+        dataSource = prepareDataSource();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.prepareStatement("CREATE TABLE CUSTOMER ("
+                    + "id bigint primary key generated always as identity,"
+                    + "name varchar(255),"
+                    + "address varchar(255),"
+                    + "phoneNumber varchar(255))").executeUpdate();
+        }
+        manager = new CarManagerImpl(dataSource);
+    }
+
+    @Rule
+    // attribute annotated with @Rule annotation must be public :-(
+    public ExpectedException expectedException = ExpectedException.none();
+
+    @After
+    public void tearDown() throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.prepareStatement("DROP TABLE CUSTOMER").executeUpdate();
+        }
+    }
+
+    private static DataSource prepareDataSource() throws SQLException {
+        EmbeddedDataSource ds = new EmbeddedDataSource();
+        //we will use in memory database
+        ds.setDatabaseName("memory:carmgr-test");
+        ds.setCreateDatabase("create");
+        return ds;
     }
 
     @Test
