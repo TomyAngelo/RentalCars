@@ -3,6 +3,7 @@ package PV168;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import javax.sql.DataSource;
 
 /**
@@ -90,11 +91,50 @@ public class CustomerManagerImpl implements CustomerManager {
     }
 
     public void updateCustomer(Customer customer) {
+        if(customer == null) {
+            throw new NullPointerException("customer can not be null");
+        }
 
+        /*if(update_customer == null) {
+            throw new NullPointerException("customer can not be null");
+        }*/
+        Connection conn = null;
+        PreparedStatement st = null;
+        try {
+            conn = dataSource.getConnection();
+            st = conn.prepareStatement("UPDATE customers SET name = ?, numberofidentitycard = ?, address = ?, email = ?, phonenumber = ? WHERE ID = ?");
+            /*st.setString(1, update_customer.getName());
+            st.setString(2, update_customer.getNumberOfIdentityCard());
+            st.setString(3, update_customer.getAddress());
+            st.setString(4, update_customer.getEmail());
+            st.setString(5, update_customer.getPhoneNumber());*/
+            st.setLong(6, customer.getId());
+
+            int count = st.executeUpdate();
+            assert count == 1;
+
+        } catch (SQLException ex) {
+            throw new RuntimeException("Error when updating customer from DB", ex);
+        }
     }
 
     public void deleteCustomer(Customer customer) {
+        if(customer == null) {
+            throw new IllegalArgumentException("Customer can not be null");
+        }
+        Connection conn = null;
+        PreparedStatement st = null;
 
+        try {
+            conn = dataSource.getConnection();
+            st = conn.prepareStatement("DELETE FROM customers WHERE id=?");
+            st.setLong(1, customer.getId());
+            if (st.executeUpdate() == 0) {
+                throw new IllegalArgumentException("customer not found");
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException("Error when deleting customer from DB", ex);
+        }
     }
 
     public Customer findCustomerById(Long id) {

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Created by jima88 on 16.3.2016.
@@ -89,10 +90,52 @@ public class CarManagerImpl implements CarManager {
     }
 
     public void deleteCar(Long id) {
+        if (id == null) {
+            throw new NullPointerException("Id of car can not be null");
+        }
+
+        Connection conn = null;
+        PreparedStatement st = null;
+        try {
+            conn = dataSource.getConnection();
+            st = conn.prepareStatement("DELETE FROM CARS WHERE ID = ?");
+            st.setLong(1, id);
+            if (st.executeUpdate() == 0) {
+                throw new IllegalArgumentException("Car not found");
+            }
+        } catch (SQLException ex){
+            throw new RuntimeException("Error when deleting car from DB");
+        }
 
     }
 
     public void editCar(Long idOfOriginal, Car updatedCar) {
+        if(idOfOriginal == null){
+            throw new NullPointerException("ID of original car can not be null.");
+        }
+
+        if(updatedCar == null){
+            throw new NullPointerException("Edited car can not be null.");
+        }
+
+        Connection conn = null;
+        PreparedStatement st = null;
+        try{
+            conn = dataSource.getConnection();
+            st = conn.prepareStatement("UPDATE CARS SET SPZ = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?");
+            st.setString(1, updatedCar.getLicensePlate());
+            st.setBigDecimal(2, updatedCar.getNumberOfKM());
+            st.setString(3, updatedCar.getModel());
+            st.setBigDecimal(4, updatedCar.getPrice());
+            st.setLong(5, idOfOriginal);
+
+            if(st.executeUpdate() == 0){
+                throw new IllegalArgumentException();
+            }
+
+        } catch(SQLException ex){
+            throw new RuntimeException("Error, when updating car from DB.", ex);
+        }
 
     }
 
