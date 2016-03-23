@@ -93,7 +93,7 @@ public class CustomerManagerTest {
         try{
             manager.createCustomer(customer);
             fail("name cannot be null");
-        }catch(NullPointerException ex){
+        }catch(IllegalArgumentException ex){
             //OK
         }
 
@@ -101,7 +101,7 @@ public class CustomerManagerTest {
         try{
             manager.createCustomer(customer);
             fail("address cannot be null");
-        }catch(NullPointerException ex){
+        }catch(IllegalArgumentException ex){
             //OK
         }
 
@@ -109,7 +109,7 @@ public class CustomerManagerTest {
         try{
             manager.createCustomer(customer);
             fail("phoneNumber cannot be null");
-        }catch(NullPointerException ex){
+        }catch(IllegalArgumentException ex){
             //OK
         }
     }
@@ -177,7 +177,7 @@ public class CustomerManagerTest {
         try {
             manager.updateCustomer(null);
             fail();
-        } catch (NullPointerException ex) {
+        } catch (IllegalArgumentException ex) {
             //OK
         }
 
@@ -186,7 +186,7 @@ public class CustomerManagerTest {
             customer.setId(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (NullPointerException ex) {
+        } catch (IllegalArgumentException ex) {
             //OK
         }
 
@@ -204,7 +204,7 @@ public class CustomerManagerTest {
             customer.setAddress(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (NullPointerException ex) {
+        } catch (IllegalArgumentException ex) {
             //OK
         }
 
@@ -213,7 +213,7 @@ public class CustomerManagerTest {
             customer.setName(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (NullPointerException ex) {
+        } catch (IllegalArgumentException ex) {
             //OK
         }
 
@@ -222,7 +222,7 @@ public class CustomerManagerTest {
             customer.setPhoneNumber(null);
             manager.updateCustomer(customer);
             fail();
-        } catch (NullPointerException ex) {
+        } catch (IllegalArgumentException ex) {
             //OK
         }
 
