@@ -95,19 +95,12 @@ public class CustomerManagerImpl implements CustomerManager {
             throw new NullPointerException("customer can not be null");
         }
 
-        /*if(update_customer == null) {
-            throw new NullPointerException("customer can not be null");
-        }*/
-        Connection conn = null;
-        PreparedStatement st = null;
-        try {
-            conn = dataSource.getConnection();
-            st = conn.prepareStatement("UPDATE customers SET name = ?, numberofidentitycard = ?, address = ?, email = ?, phonenumber = ? WHERE ID = ?");
-            /*st.setString(1, update_customer.getName());
-            st.setString(2, update_customer.getNumberOfIdentityCard());
-            st.setString(3, update_customer.getAddress());
-            st.setString(4, update_customer.getEmail());
-            st.setString(5, update_customer.getPhoneNumber());*/
+
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement st = conn.prepareStatement("UPDATE customers SET name = ?, numberofidentitycard = ?, address = ?, email = ?, phonenumber = ? WHERE ID = ?");)
+            {st.setString(1, customer.getName());
+            st.setString(2, customer.getAddress());
+            st.setString(3, customer.getPhoneNumber());
             st.setLong(6, customer.getId());
 
             int count = st.executeUpdate();
@@ -122,13 +115,11 @@ public class CustomerManagerImpl implements CustomerManager {
         if(customer == null) {
             throw new IllegalArgumentException("Customer can not be null");
         }
-        Connection conn = null;
-        PreparedStatement st = null;
 
-        try {
-            conn = dataSource.getConnection();
-            st = conn.prepareStatement("DELETE FROM customers WHERE id=?");
-            st.setLong(1, customer.getId());
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement st = conn.prepareStatement("DELETE FROM customers WHERE id=?");)
+            {st.setLong(1, customer.getId());
             if (st.executeUpdate() == 0) {
                 throw new IllegalArgumentException("customer not found");
             }

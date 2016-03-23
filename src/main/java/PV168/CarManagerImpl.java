@@ -94,12 +94,12 @@ public class CarManagerImpl implements CarManager {
             throw new NullPointerException("Id of car can not be null");
         }
 
-        Connection conn = null;
-        PreparedStatement st = null;
-        try {
-            conn = dataSource.getConnection();
-            st = conn.prepareStatement("DELETE FROM CARS WHERE ID = ?");
-            st.setLong(1, id);
+
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement st = conn.prepareStatement("DELETE FROM CARS WHERE ID = ?");
+        )
+            {st.setLong(1, id);
             if (st.executeUpdate() == 0) {
                 throw new IllegalArgumentException("Car not found");
             }
@@ -118,11 +118,13 @@ public class CarManagerImpl implements CarManager {
             throw new NullPointerException("Edited car can not be null.");
         }
 
-        Connection conn = null;
-        PreparedStatement st = null;
-        try{
-            conn = dataSource.getConnection();
-            st = conn.prepareStatement("UPDATE CARS SET SPZ = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?");
+
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement st = conn.prepareStatement("UPDATE CARS SET SPZ = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?");
+            )
+
+            {
             st.setString(1, updatedCar.getLicensePlate());
             st.setBigDecimal(2, updatedCar.getNumberOfKM());
             st.setString(3, updatedCar.getModel());
