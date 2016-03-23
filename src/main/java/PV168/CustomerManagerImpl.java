@@ -27,24 +27,26 @@ public class CustomerManagerImpl implements CustomerManager {
         if (customer.getId() != null) {
             throw new IllegalArgumentException("Customer id is not null");
         }
+        if (customer.getAddress()==null ) {
+            throw new IllegalArgumentException("Customer address is null");
+        }
         if (customer.getAddress().isEmpty() ) {
             throw new IllegalArgumentException("Customer address is empty");
         }
-        if (customer.getAddress()==null ) {
-            throw new IllegalArgumentException("Customer address is null");
+
+        if (customer.getName()==null ) {
+            throw new IllegalArgumentException("Customer names is null");
         }
         if (customer.getName().isEmpty() ) {
             throw new IllegalArgumentException("Customer names is empty");
         }
-        if (customer.getName()==null ) {
-            throw new IllegalArgumentException("Customer names is null");
+        if (customer.getPhoneNumber()==null ) {
+            throw new IllegalArgumentException("Customer phone number is null");
         }
         if (customer.getPhoneNumber().isEmpty() ) {
             throw new IllegalArgumentException("Customer phone number is empty");
         }
-        if (customer.getPhoneNumber()==null ) {
-            throw new IllegalArgumentException("Customer phone number is null");
-        }
+
 
         try (
                 Connection connection = dataSource.getConnection();

@@ -7,6 +7,11 @@ import java.util.List;
  */
 public interface CustomerManager {
 
+    /**
+     *
+     * @param customer
+     * @throws IllegalArgumentException
+     */
     void createCustomer(Customer customer);
     void updateCustomer(Customer customer);
     void deleteCustomer(Customer customer);
