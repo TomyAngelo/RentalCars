@@ -18,42 +18,29 @@ public class CustomerManagerImpl implements CustomerManager {
         this.dataSource = dataSource;
     }
 
+    private void checkDataSource() {
+        if (dataSource == null) {
+            throw new IllegalStateException("DataSource is not set");
+        }
+    }
 
     public void createCustomer(Customer customer) {
-
-        if (customer == null) {
+        checkDataSource();
+        if(customer==null){
             throw new IllegalArgumentException("Customer is null");
         }
-        if (customer.getId() != null) {
-            throw new IllegalArgumentException("Customer id is not null");
-        }
-        if (customer.getAddress()==null ) {
-            throw new IllegalArgumentException("Customer address is null");
-        }
-        if (customer.getAddress().isEmpty() ) {
-            throw new IllegalArgumentException("Customer address is empty");
+
+        if(customer.getId()!=null) {
+            throw new IllegalArgumentException("Customer is already in DB");
         }
 
-        if (customer.getName()==null ) {
-            throw new IllegalArgumentException("Customer names is null");
-        }
-        if (customer.getName().isEmpty() ) {
-            throw new IllegalArgumentException("Customer names is empty");
-        }
-        if (customer.getPhoneNumber()==null ) {
-            throw new IllegalArgumentException("Customer phone number is null");
-        }
-        if (customer.getPhoneNumber().isEmpty() ) {
-            throw new IllegalArgumentException("Customer phone number is empty");
-        }
-
-
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "INSERT INTO CUSTOMER (name,address,phoneNumber) VALUES (?,?,?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-
+        validate(customer);
+        Connection conn = null;
+        PreparedStatement st = null;
+        try{
+            conn = dataSource.getConnection();
+            conn.setAutoCommit(false);
+            st = conn.prepareStatement("INSERT INTO CUSTOMERS (NAME,ADDRESS,PHONENUMBER) VALUES (?,?,?)",Statement.RETURN_GENERATED_KEYS);
             st.setString(1, customer.getName());
             st.setString(2, customer.getAddress());
             st.setString(3, customer.getPhoneNumber());
@@ -65,9 +52,12 @@ public class CustomerManagerImpl implements CustomerManager {
 
             ResultSet keyRS = st.getGeneratedKeys();
             customer.setId(getKey(keyRS, customer));
-
+            conn.commit();
         } catch (SQLException ex) {
             throw new ServiceFailureException("Error when inserting customer " + customer, ex);
+        }finally {
+            DBUtils.doRollbackQuietly(conn);
+            DBUtils.closeQuietly(conn,st);
         }
     }
 
@@ -93,48 +83,80 @@ public class CustomerManagerImpl implements CustomerManager {
     }
 
     public void updateCustomer(Customer customer) {
-        if(customer == null) {
-            throw new NullPointerException("customer can not be null");
+        checkDataSource();
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer is null");
         }
+        if (customer.getId() == null) {
+            throw new IllegalArgumentException("Customer isn't in DB");
+        }
+        validate(customer);
 
-
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement st = conn.prepareStatement("UPDATE customers SET name = ?, numberofidentitycard = ?, address = ?, email = ?, phonenumber = ? WHERE ID = ?");)
-            {st.setString(1, customer.getName());
+        Connection conn = null;
+        PreparedStatement st = null;
+        try{
+            conn = dataSource.getConnection();
+            conn.setAutoCommit(false);
+            st = conn.prepareStatement("UPDATE CUSTOMERS SET NAME = ?, ADDRESS = ?,  PHONENUMBER = ? WHERE ID = ?");
+            st.setString(1, customer.getName());
             st.setString(2, customer.getAddress());
             st.setString(3, customer.getPhoneNumber());
-            st.setLong(6, customer.getId());
+            st.setLong(4, customer.getId());
 
             int count = st.executeUpdate();
-            assert count == 1;
-
+                if (count != 1){
+                    throw new IllegalArgumentException("customer id not found");
+                }
+            conn.commit();
         } catch (SQLException ex) {
             throw new RuntimeException("Error when updating customer from DB", ex);
+        }finally {
+            DBUtils.doRollbackQuietly(conn);
+            DBUtils.closeQuietly(conn,st);
         }
     }
 
     public void deleteCustomer(Customer customer) {
-        if(customer == null) {
-            throw new IllegalArgumentException("Customer can not be null");
+        checkDataSource();
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer is null");
+        }
+        if (customer.getId() == null) {
+            throw new IllegalArgumentException("Customer isn't in DB");
         }
 
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement st = conn.prepareStatement("DELETE FROM customers WHERE id=?");)
-            {st.setLong(1, customer.getId());
+        Connection conn = null;
+        PreparedStatement st = null;
+        try{
+            conn = dataSource.getConnection();
+            conn.setAutoCommit(false);
+            st = conn.prepareStatement("DELETE FROM CUSTOMERS WHERE id=?");
+            st.setLong(1, customer.getId());
             if (st.executeUpdate() == 0) {
                 throw new IllegalArgumentException("customer not found");
             }
+            conn.commit();
         } catch (SQLException ex) {
             throw new RuntimeException("Error when deleting customer from DB", ex);
+        }finally {
+            DBUtils.doRollbackQuietly(conn);
+            DBUtils.closeQuietly(conn,st);
         }
     }
 
     public Customer findCustomerById(Long id) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,name,address,phoneNumber FROM customer WHERE id = ?")) {
+        checkDataSource();
+        if(id==null){
+            throw new IllegalArgumentException("argumentis null");
+        }
+        if(id < 0){
+            throw new IllegalArgumentException("id is negative ");
+        }
+        Connection conn = null;
+        PreparedStatement st = null;
+        try{
+            conn = dataSource.getConnection();
+            st = conn.prepareStatement("SELECT ID,NAME,ADDRESS,PHONENUMBER FROM CUSTOMERS WHERE ID = ?");
 
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
@@ -156,6 +178,8 @@ public class CustomerManagerImpl implements CustomerManager {
         } catch (SQLException ex) {
             throw new ServiceFailureException(
                     "Error when retrieving grave with id " + id, ex);
+        }finally {
+            DBUtils.closeQuietly(conn,st);
         }
     }
 
@@ -170,10 +194,12 @@ public class CustomerManagerImpl implements CustomerManager {
     }
 
     public List<Customer> getAllCustomers() {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,name,address,phoneNumber FROM customer")) {
+        checkDataSource();
+        Connection conn = null;
+        PreparedStatement st = null;
+        try{
+            conn = dataSource.getConnection();
+            st = conn.prepareStatement("SELECT ID,NAME,ADDRESS,PHONENUMBER FROM CUSTOMERS");
 
             ResultSet rs = st.executeQuery();
 
@@ -186,6 +212,22 @@ public class CustomerManagerImpl implements CustomerManager {
         } catch (SQLException ex) {
             throw new ServiceFailureException(
                     "Error when retrieving all customers", ex);
+        }finally {
+            DBUtils.closeQuietly(conn,st);
         }
+    }
+
+    private void validate(Customer customer){
+
+        if (customer.getAddress()==null || customer.getAddress().isEmpty()) {
+            throw new IllegalArgumentException("Customer address is null or empty");
+        }
+        if (customer.getName()==null || customer.getName().isEmpty()) {
+            throw new IllegalArgumentException("Customer names is null or empty");
+        }
+        if (customer.getPhoneNumber()==null || customer.getPhoneNumber().isEmpty()  ) {
+            throw new IllegalArgumentException("Customer phone number is null or empty");
+        }
+
     }
 }

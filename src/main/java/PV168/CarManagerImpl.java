@@ -19,35 +19,11 @@ public class CarManagerImpl implements CarManager {
     }
 
     public void addCar(Car car) {
-        if (car == null) {
-            throw new IllegalArgumentException("Car is null");
-        }
-        if (car.getId() != null) {
-            throw new IllegalArgumentException("Car id is not null");
-        }
-        if (car.getLicensePlate().isEmpty() ) {
-            throw new IllegalArgumentException("Car license plate is empty");
-        }
-        if (car.getLicensePlate()== null ) {
-            throw new IllegalArgumentException("Car license plate is null");
-        }
-        if (car.getModel().isEmpty() ) {
-            throw new IllegalArgumentException("Car model is empty");
-        }
-        if (car.getModel()==null ) {
-            throw new IllegalArgumentException("Car model is null");
-        }
-        if (car.getPrice().compareTo(BigDecimal.ZERO) <= 0  ) {
-            throw new IllegalArgumentException("Car price is <= 0");
-        }
-        if (car.getNumberOfKM().compareTo(BigDecimal.ZERO) < 0  ) {
-            throw new IllegalArgumentException("Car number of kilometers is lower than 0");
-        }
-
+        validate(car);
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement st = connection.prepareStatement(
-                        "INSERT INTO CAR (licensePlate,model,price,numberOfKm) VALUES (?,?,?,?)",
+                        "INSERT INTO CARS (licensePlate,model,price,numberOfKm) VALUES (?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
 
             st.setString(1, car.getLicensePlate());
@@ -89,17 +65,14 @@ public class CarManagerImpl implements CarManager {
         }
     }
 
-    public void deleteCar(Long id) {
-        if (id == null) {
-            throw new NullPointerException("Id of car can not be null");
-        }
-
+    public void deleteCar(Car car) {
+        validate(car);
 
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement st = conn.prepareStatement("DELETE FROM CARS WHERE ID = ?");
         )
-            {st.setLong(1, id);
+            {st.setLong(1, car.getId());
             if (st.executeUpdate() == 0) {
                 throw new IllegalArgumentException("Car not found");
             }
@@ -110,14 +83,7 @@ public class CarManagerImpl implements CarManager {
     }
 
     public void editCar(Long idOfOriginal, Car updatedCar) {
-        if(idOfOriginal == null){
-            throw new NullPointerException("ID of original car can not be null.");
-        }
-
-        if(updatedCar == null){
-            throw new NullPointerException("Edited car can not be null.");
-        }
-
+        validate(updatedCar);
 
         try (
                 Connection conn = dataSource.getConnection();
@@ -233,5 +199,26 @@ public class CarManagerImpl implements CarManager {
 
     public boolean getAvailabilityOfCar(Long id) {
         return false;
+    }
+
+    private void validate(Car car ){
+        if (car == null) {
+            throw new IllegalArgumentException("Car is null");
+        }
+        if (car.getId() != null) {
+            throw new IllegalArgumentException("Car id is not null");
+        }
+        if (car.getLicensePlate()== null || car.getLicensePlate().isEmpty()) {
+            throw new IllegalArgumentException("Car license plate is null or empty");
+        }
+        if (car.getModel()==null || car.getModel().isEmpty()) {
+            throw new IllegalArgumentException("Car model is null or empty");
+        }
+        if (car.getPrice().compareTo(BigDecimal.ZERO) <= 0  ) {
+            throw new IllegalArgumentException("Car price is <= 0");
+        }
+        if (car.getNumberOfKM().compareTo(BigDecimal.ZERO) < 0  ) {
+            throw new IllegalArgumentException("Car number of kilometers is lower than 0");
+        }
     }
 }

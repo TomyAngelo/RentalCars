@@ -1,26 +1,33 @@
 package PV168;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 /**
  * Created by TomyAngelo on 18. 3. 2016.
  */
 public class Lease {
+    private Long id;
     private Customer customer;
     private Car car;
-    private Date dateFrom;
-    private Date dateTo;
+    private LocalDate dateFrom;
+    private LocalDate dateTo;
     private BigDecimal price;
-    private Date realEndDate;
+    private LocalDate realEndDate;
 
-    public Lease(Customer customer, Car car, Date dateFrom, BigDecimal price, Date dateTo, Date realEndDate) {
+    public Lease(Long id, Customer customer, Car car, LocalDate dateFrom, BigDecimal price, LocalDate dateTo, LocalDate realEndDate) {
+        this.id = id;
         this.customer = customer;
         this.car = car;
         this.dateFrom = dateFrom;
         this.price = price;
         this.dateTo = dateTo;
         this.realEndDate = realEndDate;
+    }
+
+    public Lease(){
+
     }
 
     public Customer getCustomer() {
@@ -31,11 +38,11 @@ public class Lease {
         return car;
     }
 
-    public Date getDateFrom() {
+    public LocalDate getDateFrom() {
         return dateFrom;
     }
 
-    public Date getDateTo() {
+    public LocalDate getDateTo() {
         return dateTo;
     }
 
@@ -43,7 +50,7 @@ public class Lease {
         return price;
     }
 
-    public Date getRealEndDate() {
+    public LocalDate getRealEndDate() {
         return realEndDate;
     }
 
@@ -55,11 +62,11 @@ public class Lease {
         this.car = car;
     }
 
-    public void setDateFrom(Date dateFrom) {
+    public void setDateFrom(LocalDate dateFrom) {
         this.dateFrom = dateFrom;
     }
 
-    public void setDateTo(Date dateTo) {
+    public void setDateTo(LocalDate dateTo) {
         this.dateTo = dateTo;
     }
 
@@ -67,8 +74,16 @@ public class Lease {
         this.price = price;
     }
 
-    public void setRealEndDate(Date realEndDate) {
+    public void setRealEndDate(LocalDate realEndDate) {
         this.realEndDate = realEndDate;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     @Override
@@ -78,30 +93,33 @@ public class Lease {
 
         Lease lease = (Lease) o;
 
-        if (customer != null ? !customer.equals(lease.customer) : lease.customer != null) return false;
-        if (car != null ? !car.equals(lease.car) : lease.car != null) return false;
-        if (dateFrom != null ? !dateFrom.equals(lease.dateFrom) : lease.dateFrom != null) return false;
-        if (dateTo != null ? !dateTo.equals(lease.dateTo) : lease.dateTo != null) return false;
-        if (price != null ? !price.equals(lease.price) : lease.price != null) return false;
-        return realEndDate != null ? realEndDate.equals(lease.realEndDate) : lease.realEndDate == null;
+        if (!id.equals(lease.id)) return false;
+        if (!customer.equals(lease.customer)) return false;
+        if (!car.equals(lease.car)) return false;
+        if (!dateFrom.equals(lease.dateFrom)) return false;
+        if (!dateTo.equals(lease.dateTo)) return false;
+        if (!price.equals(lease.price)) return false;
+        return realEndDate.equals(lease.realEndDate);
 
     }
 
     @Override
     public int hashCode() {
-        int result = customer != null ? customer.hashCode() : 0;
-        result = 31 * result + (car != null ? car.hashCode() : 0);
-        result = 31 * result + (dateFrom != null ? dateFrom.hashCode() : 0);
-        result = 31 * result + (dateTo != null ? dateTo.hashCode() : 0);
-        result = 31 * result + (price != null ? price.hashCode() : 0);
-        result = 31 * result + (realEndDate != null ? realEndDate.hashCode() : 0);
+        int result = id.hashCode();
+        result = 31 * result + customer.hashCode();
+        result = 31 * result + car.hashCode();
+        result = 31 * result + dateFrom.hashCode();
+        result = 31 * result + dateTo.hashCode();
+        result = 31 * result + price.hashCode();
+        result = 31 * result + realEndDate.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
         return "Lease{" +
-                "customer=" + customer +
+                "id=" + id +
+                ", customer=" + customer +
                 ", car=" + car +
                 ", dateFrom=" + dateFrom +
                 ", dateTo=" + dateTo +

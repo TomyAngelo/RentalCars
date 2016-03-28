@@ -148,14 +148,15 @@ public class CarManagerImplTest {
         }
         Car car = new Car(11L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         //try delete nonexistent car
-        try {
-            manager.deleteCar(-1L);
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
+        //car.setId(-1L);
+//        try {
+//            manager.deleteCar(car);
+//            fail();
+//        } catch (IllegalArgumentException e) {
+//        }
         //try delete the car properly
         manager.addCar(car);
-        manager.deleteCar(11L);
+        manager.deleteCar(car);
         //check if the right car was found
         assertEquals(0,manager.getAllCars().size());
     }

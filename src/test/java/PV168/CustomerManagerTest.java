@@ -31,7 +31,7 @@ public class CustomerManagerTest {
     public void setUp() throws Exception {
         dataSource = prepareDataSource();
         try (Connection connection = dataSource.getConnection()) {
-            connection.prepareStatement("CREATE TABLE CUSTOMER ("
+            connection.prepareStatement("CREATE TABLE CUSTOMERS ("
                     + "id bigint primary key generated always as identity,"
                     + "name varchar(255),"
                     + "address varchar(255),"
@@ -47,7 +47,7 @@ public class CustomerManagerTest {
     @After
     public void tearDown() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            connection.prepareStatement("DROP TABLE CUSTOMER").executeUpdate();
+            connection.prepareStatement("DROP TABLE CUSTOMERS").executeUpdate();
         }
     }
 
@@ -97,6 +97,14 @@ public class CustomerManagerTest {
             //OK
         }
 
+        customer = new Customer( "" , "Brno 102" , "0944999777");
+        try{
+            manager.createCustomer(customer);
+            fail("name cannot be empty");
+        }catch(IllegalArgumentException ex){
+            //OK
+        }
+
         customer = new Customer( "Tomy" , null , "0944999777");
         try{
             manager.createCustomer(customer);
@@ -105,10 +113,26 @@ public class CustomerManagerTest {
             //OK
         }
 
+        customer = new Customer( "Tomy" , "" , "0944999777");
+        try{
+            manager.createCustomer(customer);
+            fail("address cannot be empty");
+        }catch(IllegalArgumentException ex){
+            //OK
+        }
+
         customer = new Customer( "Tomy" , "Brno 102" , null);
         try{
             manager.createCustomer(customer);
             fail("phoneNumber cannot be null");
+        }catch(IllegalArgumentException ex){
+            //OK
+        }
+
+        customer = new Customer( "Tomy" , "Brno 102" , "");
+        try{
+            manager.createCustomer(customer);
+            fail("phoneNumber cannot be empty");
         }catch(IllegalArgumentException ex){
             //OK
         }
@@ -144,28 +168,13 @@ public class CustomerManagerTest {
         assertThat("name was  changed", cus1.getName(), is(equalTo("Paul")));
         assertThat("phone number was not changed", cus1.getPhoneNumber(), is(equalTo("0911123654")));
 
-        cus1 = manager.findCustomerById(customerId);
-        cus1.setAddress(null);
-        manager.updateCustomer(cus1);
-        assertThat("name was  changed", cus1.getName(), is(equalTo("Paul")));
-        assertThat("phone number was changed", cus1.getPhoneNumber(), is(equalTo("0911123654")));
-        assertNull(cus1.getAddress());
-
-        cus1 = manager.findCustomerById(customerId);
-        cus1.setName(null);
-        manager.updateCustomer(cus1);
-        assertThat("address was changed", cus1.getAddress(), is(equalTo("Kosice 21")));
-        assertThat("phone number was changed", cus1.getPhoneNumber(), is(equalTo("0911123654")));
-        assertNull(cus1.getName());
-
-        cus1 = manager.findCustomerById(customerId);
-        cus1.setPhoneNumber(null);
-        manager.updateCustomer(cus1);
-        assertThat("address was changed", cus1.getAddress(), is(equalTo("Kosice 21")));
-        assertThat("name was  changed", cus1.getName(), is(equalTo("Paul")));
-        assertNull(cus1.getPhoneNumber());
 
         assertDeepEquals(cus2, manager.findCustomerById(cus2.getId()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateWithNull() throws Exception {
+        manager.updateCustomer(null);
     }
 
     @Test
@@ -173,13 +182,6 @@ public class CustomerManagerTest {
         Customer customer = new Customer("Tomy","Brno 102", "0944999777");
         manager.createCustomer(customer);
         Long customerId = customer.getId();
-
-        try {
-            manager.updateCustomer(null);
-            fail();
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
 
         try {
             customer = manager.findCustomerById(customerId);
@@ -210,7 +212,25 @@ public class CustomerManagerTest {
 
         try {
             customer = manager.findCustomerById(customerId);
+            customer.setAddress("");
+            manager.updateCustomer(customer);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+
+        try {
+            customer = manager.findCustomerById(customerId);
             customer.setName(null);
+            manager.updateCustomer(customer);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+
+        try {
+            customer = manager.findCustomerById(customerId);
+            customer.setName("");
             manager.updateCustomer(customer);
             fail();
         } catch (IllegalArgumentException ex) {
@@ -226,7 +246,15 @@ public class CustomerManagerTest {
             //OK
         }
 
-        // empty strings (" ")
+        try {
+            customer = manager.findCustomerById(customerId);
+            customer.setPhoneNumber("");
+            manager.updateCustomer(customer);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+
     }
 
     @Test

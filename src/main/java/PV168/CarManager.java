@@ -8,7 +8,7 @@ import java.util.List;
 public interface CarManager {
 
     void addCar(Car car);
-    void deleteCar(Long id);
+    void deleteCar(Car car);
     void editCar(Long idOfOriginal, Car updatedCar);
     List<Car> getAllCars();
     Car getCarById(Long id);
