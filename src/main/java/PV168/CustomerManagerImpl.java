@@ -2,6 +2,7 @@ package PV168;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import javax.sql.DataSource;
@@ -141,6 +142,13 @@ public class CustomerManagerImpl implements CustomerManager {
         }finally {
             DBUtils.doRollbackQuietly(conn);
             DBUtils.closeQuietly(conn,st);
+        }
+    }
+
+    public void deleteAllCustomers(){
+        Collection<Customer> customers = new ArrayList<>(getAllCustomers());
+        for(Customer c : customers) {
+            deleteCustomer(c);
         }
     }
 

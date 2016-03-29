@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -54,7 +55,7 @@ public class CarManagerImpl implements CarManager {
             Long result = keyRS.getLong(1);
             if (keyRS.next()) {
                 throw new ServiceFailureException("Internal Error: Generated key"
-                        + "retrieving failed when trying to insert customer " + car
+                        + "retrieving failed when trying to insert car " + car
                         + " - more keys found");
             }
             return result;
@@ -80,6 +81,13 @@ public class CarManagerImpl implements CarManager {
             throw new RuntimeException("Error when deleting car from DB");
         }
 
+    }
+
+    public void deleteAllCars(){
+        Collection<Car> cars = new ArrayList<>(getAllCars());
+        for(Car c : cars) {
+            deleteCar(c);
+        }
     }
 
     public void editCar(Long idOfOriginal, Car updatedCar) {
@@ -111,7 +119,7 @@ public class CarManagerImpl implements CarManager {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,licensePlate,model,price,numberOfKm FROM car")) {
+                        "SELECT id,licensePlate,model,price,numberOfKm FROM cars")) {
 
             ResultSet rs = st.executeQuery();
 
@@ -132,7 +140,7 @@ public class CarManagerImpl implements CarManager {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,licensePlace,model,price,numberOfKm FROM car WHERE id = ?")) {
+                        "SELECT id,licensePlace,model,price,numberOfKm FROM cars WHERE id = ?")) {
 
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
@@ -172,7 +180,7 @@ public class CarManagerImpl implements CarManager {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,licensePlace,model,price,numberOfKm FROM car WHERE licensePlate = ?")) {
+                        "SELECT id,licensePlace,model,price,numberOfKm FROM cars WHERE licensePlate = ?")) {
 
             st.setString(1, licensePlate);
             ResultSet rs = st.executeQuery();
@@ -205,8 +213,8 @@ public class CarManagerImpl implements CarManager {
         if (car == null) {
             throw new IllegalArgumentException("Car is null");
         }
-        if (car.getId() != null) {
-            throw new IllegalArgumentException("Car id is not null");
+        if (car.getId() == null) {
+            throw new IllegalArgumentException("Car id is null");
         }
         if (car.getLicensePlate()== null || car.getLicensePlate().isEmpty()) {
             throw new IllegalArgumentException("Car license plate is null or empty");

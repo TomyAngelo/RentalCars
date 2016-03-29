@@ -7,6 +7,7 @@ package PV168;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 public interface LeaseManager {
 
@@ -14,13 +15,13 @@ public interface LeaseManager {
 
     public Lease getLeaseByID(Long id);
 
-    public Collection<Lease> getAllLeases();
+    public List<Lease> getAllLeases();
 
-    public Collection<Lease> getAllLeasesByEndDate(LocalDate endDate);
+    public List<Lease> getAllLeasesByEndDate(LocalDate endDate);
 
-    public Collection<Lease> findLeasesForCustomer(Customer customer);
+    public List<Lease> findLeasesForCustomer(Customer customer);
 
-    public Collection<Lease> findLeasesForCar(Car car);
+    public List<Lease> findLeasesForCar(Car car);
 
     public void updateLease(Lease lease);
 

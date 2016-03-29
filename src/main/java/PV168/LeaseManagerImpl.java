@@ -149,7 +149,7 @@ public class LeaseManagerImpl implements LeaseManager {
     }
 
     private Lease resultSetToLease(ResultSet rs) throws SQLException {
-        Lease lease=new Lease();
+        Lease lease= new Lease();
         lease.setId(rs.getLong("ID"));
         lease.setCustomer(customerManager.findCustomerById(rs.getLong("IDCUSTOMER")));
         lease.setCar(carManager.getCarById (rs.getLong("IDCAR")));
@@ -165,7 +165,7 @@ public class LeaseManagerImpl implements LeaseManager {
     }
 
     @Override
-    public Collection<Lease> getAllLeases() {
+    public List<Lease> getAllLeases() {
         checkDataSource();
         Connection conn = null;
         PreparedStatement st = null;
@@ -186,7 +186,7 @@ public class LeaseManagerImpl implements LeaseManager {
     }
 
     @Override
-    public Collection<Lease> getAllLeasesByEndDate(LocalDate endDate) {
+    public List<Lease> getAllLeasesByEndDate(LocalDate endDate) {
         checkDataSource();
         if(endDate == null){
             throw new IllegalArgumentException("end lease is null");
@@ -210,7 +210,7 @@ public class LeaseManagerImpl implements LeaseManager {
     }
 
     @Override
-    public Collection<Lease> findLeasesForCustomer(Customer customer) {
+    public List<Lease> findLeasesForCustomer(Customer customer) {
         checkDataSource();
         if(customer == null){
             throw new IllegalArgumentException("customer is null");
@@ -240,7 +240,7 @@ public class LeaseManagerImpl implements LeaseManager {
     }
 
     @Override
-    public Collection<Lease> findLeasesForCar(Car car) {
+    public List<Lease> findLeasesForCar(Car car) {
         checkDataSource();
         if(car == null){
             throw new IllegalArgumentException("car is null");
@@ -392,6 +392,13 @@ public class LeaseManagerImpl implements LeaseManager {
         }finally {
             DBUtils.doRollbackQuietly(conn);
             DBUtils.closeQuietly(conn,st);
+        }
+    }
+
+    public void deleteAllLeases() {
+        Collection<Lease> leases = new ArrayList<>(getAllLeases());
+        for(Lease l : leases) {
+            deleteLease(l);
         }
     }
 

@@ -28,11 +28,12 @@ public class CarManagerImplTest {
     public void setUp() throws Exception {
         dataSource = prepareDataSource();
         try (Connection connection = dataSource.getConnection()) {
-            connection.prepareStatement("CREATE TABLE CUSTOMER ("
+            connection.prepareStatement("CREATE TABLE CARS ("
                     + "id bigint primary key generated always as identity,"
-                    + "name varchar(255),"
-                    + "address varchar(255),"
-                    + "phoneNumber varchar(255))").executeUpdate();
+                    + "licensePlate varchar(255),"
+                    + "model varchar(255),"
+                    + "numberOfKM int,"
+                    + "price int)").executeUpdate();
         }
         manager = new CarManagerImpl(dataSource);
     }
@@ -44,7 +45,7 @@ public class CarManagerImplTest {
     @After
     public void tearDown() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            connection.prepareStatement("DROP TABLE CUSTOMER").executeUpdate();
+            connection.prepareStatement("DROP TABLE CARS").executeUpdate();
         }
     }
 
