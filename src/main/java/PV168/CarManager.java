@@ -9,7 +9,7 @@ public interface CarManager {
 
     void addCar(Car car);
     void deleteCar(Car car);
-    void editCar(Long idOfOriginal, Car updatedCar);
+    void editCar(Car car);
     List<Car> getAllCars();
     Car getCarById(Long id);
     Car getCarByLicensePlate(String licensePlate);

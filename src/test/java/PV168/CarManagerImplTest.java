@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 /**
@@ -59,22 +61,16 @@ public class CarManagerImplTest {
 
     @Test
     public void testAddCar() throws Exception {
-        Car car = new Car(11L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
-        //we try to add a correct car
+        Car car = new Car(1L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         manager.addCar(car);
         Long carId = car.getId();
-        //now id should not be null
-        assertNotNull(carId);
-        //we try to get the object back
+        assertThat("saved car has null id",car.getId(),is(not(equalTo(null))));
         Car result = manager.getCarById(carId);
-        //should be the same
-        assertEquals(car, result);
-        //all the attributes should be the same
-        assertEquals(car.getLicensePlate(), result.getLicensePlate());
-        assertEquals(car.getId(), result.getId());
-        assertEquals(car.getModel(), result.getModel());
-        assertEquals(car.getPrice(), result.getPrice());
-        assertEquals(car.getNumberOfKM(), result.getNumberOfKM());
+
+
+        assertThat("retrieved car differs from the saved one", result, is(equalTo(car)));
+        assertThat("retrieved car is the same instance", result, is(not(sameInstance(car))));
+        assertDeepEquals(car, result);
     }
 
     @Test
@@ -145,7 +141,7 @@ public class CarManagerImplTest {
         try {
             manager.deleteCar(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
         }
         Car car = new Car(11L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         //try delete nonexistent car
@@ -167,33 +163,29 @@ public class CarManagerImplTest {
         Car car1 = new Car(11L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         Car car2 = new Car(20L, "5M1 2164", "Skoda Octavia", new BigDecimal(4000), new BigDecimal(40000));
         manager.addCar(car1);
-        // try edit method with null argument
-        try {
-            manager.editCar(null, car1);
-            fail();
-        } catch (NullPointerException e) {
-        }
-        try {
-            manager.editCar(11L, null);
-            fail();
-        } catch (NullPointerException e) {
-        }
-        try {
-            manager.editCar(null, null);
-            fail();
-        } catch (NullPointerException e) {
-        }
-        //try edit nonexistent car
-        try {
-            manager.editCar(-1L, car1);
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
-        //try edit the car properly
-        manager.editCar(11L, car2);
-        car2.setId(11L);
-        //check if the right car was found
-        assertEquals(car2, manager.getCarById(11L));
+        manager.addCar(car2);
+
+        Long carId = car1.getId();
+        car1 = manager.getCarById(carId);
+        car1.setModel("Citroen Berlingo");
+        manager.editCar(car1);
+        assertThat("model was not changed", car1.getModel(), is(equalTo("Citroen Berlingo")));
+        assertThat("license plate was changed", car1.getLicensePlate(), is(equalTo("4M2 3000")));
+        assertThat("number of km was changed", car1.getNumberOfKM(), is(equalTo(new BigDecimal(20000))));
+
+        car1 = manager.getCarById(carId);
+        car1.setLicensePlate("5M1 2164");
+        manager.editCar(car1);
+        assertThat("license plate was not changed", car1.getLicensePlate(), is(equalTo("5M1 2164")));
+        assertThat("number of km was changed", car1.getNumberOfKM(), is(equalTo(new BigDecimal(20000))));
+
+        car1 = manager.getCarById(carId);
+        car1.setNumberOfKM(new BigDecimal(40000));
+        manager.editCar(car1);
+       assertThat("number of km was not changed", car1.getNumberOfKM(), is(equalTo(new BigDecimal(40000))));
+
+
+        assertDeepEquals(car2, manager.getCarById(car2.getId()));
     }
 
     @Test
@@ -217,15 +209,15 @@ public class CarManagerImplTest {
         try {
             manager.getCarById(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
         }
-        Car car = new Car(11L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car = new Car(1L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         manager.addCar(car);
         //try find car by nonexistent argument
         try {
             manager.getCarById(1208L);
             fail();
-        } catch (IllegalArgumentException e) {
+        } catch (ServiceFailureException e) {
         }
         //try find the car properly
         Long carId = car.getId();
@@ -240,7 +232,7 @@ public class CarManagerImplTest {
         try {
             manager.getCarByLicensePlate(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
         }
         Car car = new Car(11L, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         manager.addCar(car);
@@ -248,7 +240,7 @@ public class CarManagerImplTest {
         try {
             manager.getCarByLicensePlate(" ");
             fail();
-        } catch (IllegalArgumentException e) {
+        } catch (ServiceFailureException e) {
         }
         //try find the car properly
         String carLicensePlate = car.getLicensePlate();
@@ -257,7 +249,7 @@ public class CarManagerImplTest {
         assertEquals(car, c);
     }
 
-    @Test
+    /*@Test
     public void testGetAvailabilityOfCar() throws Exception {
         // try find by null argument
         try {
@@ -278,7 +270,7 @@ public class CarManagerImplTest {
         boolean b1 = manager.getAvailabilityOfCar(11L);
         //check if the right car was found
         assertEquals(true, b1);
-    }
+    }*/
 
 
 

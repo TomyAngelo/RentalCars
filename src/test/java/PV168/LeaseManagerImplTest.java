@@ -17,6 +17,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -138,7 +140,59 @@ public class LeaseManagerImplTest {
 
     @Test
     public void testGetAllLeasesByEndDate() throws Exception {
+        manager.deleteAllLeases();
+        managercar.deleteAllCars();
+        managercust.deleteAllCustomers();
 
+        managercust.createCustomer(customer1);
+        managercust.createCustomer(customer2);
+
+        managercar.addCar(car1);
+        managercar.addCar(car2);
+
+        Lease lease1 = createLease1();
+
+        manager.createLease(lease1);
+        Long leaseId = lease1.getId();
+        //now id should not be null
+        assertNotNull(leaseId);
+        //we try to get the object back
+        Lease result = manager.getLeaseByID(leaseId);
+        //should be the same
+        assertEquals(lease1, result);
+
+        assertDeepEquals(lease1, result);
+
+        List<Lease> expected = Arrays.asList(lease1);
+        List<Lease> actual = manager.getAllLeases();
+
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
+
+        assertEquals(expected, actual);
+        assertDeepEquals(expected, actual);
+
+
+        Lease lease2 = createLease2();
+        manager.createLease(lease2);
+        LocalDate endDate = lease2.getDateTo();
+        List<Lease> res = manager.getAllLeasesByEndDate(endDate);
+
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
+        //should be the same
+        assertEquals(lease2, res.get(1));
+
+        assertDeepEquals(lease2, res.get(1));
+
+        expected = Arrays.asList(lease1, lease2);
+        actual = manager.getAllLeases();
+
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
+
+        assertEquals(expected, actual);
+        assertDeepEquals(expected, actual);
     }
 
     @Test
@@ -180,6 +234,8 @@ public class LeaseManagerImplTest {
         manager.createLease(lease2);
         Customer leaseCustomer = lease2.getCustomer();
         List<Lease> res = manager.findLeasesForCustomer(leaseCustomer);
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
         //should be the same
         assertEquals(lease2, res.get(1));
 
@@ -197,12 +253,100 @@ public class LeaseManagerImplTest {
 
     @Test
     public void testFindLeasesForCar() throws Exception {
+        manager.deleteAllLeases();
+        managercar.deleteAllCars();
+        managercust.deleteAllCustomers();
 
+        managercust.createCustomer(customer1);
+        managercust.createCustomer(customer2);
+
+        managercar.addCar(car1);
+        managercar.addCar(car2);
+
+        Lease lease1 = createLease1();
+
+        manager.createLease(lease1);
+        Long leaseId = lease1.getId();
+        //now id should not be null
+        assertNotNull(leaseId);
+        //we try to get the object back
+        Lease result = manager.getLeaseByID(leaseId);
+        //should be the same
+        assertEquals(lease1, result);
+
+        assertDeepEquals(lease1, result);
+
+        List<Lease> expected = Arrays.asList(lease1);
+        List<Lease> actual = manager.getAllLeases();
+
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
+
+        assertEquals(expected, actual);
+        assertDeepEquals(expected, actual);
+
+
+        Lease lease2 = createLease2();
+        manager.createLease(lease2);
+        Customer leaseCustomer = lease2.getCustomer();
+        List<Lease> res = manager.findLeasesForCustomer(leaseCustomer);
+
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
+
+        //should be the same
+        assertEquals(lease2, res.get(1));
+
+        assertDeepEquals(lease2, res.get(1));
+
+        expected = Arrays.asList(lease1, lease2);
+        actual = manager.getAllLeases();
+
+        Collections.sort(actual, idComparator);
+        Collections.sort(expected, idComparator);
+
+        assertEquals(expected, actual);
+        assertDeepEquals(expected, actual);
     }
 
     @Test
     public void testUpdateLease() throws Exception {
+        manager.deleteAllLeases();
+        managercar.deleteAllCars();
+        managercust.deleteAllCustomers();
 
+        managercust.createCustomer(customer1);
+        managercust.createCustomer(customer2);
+
+        managercar.addCar(car1);
+        managercar.addCar(car2);
+
+        Lease lease1 = createLease1();
+        Lease lease2 = createLease2();
+
+        Long leaseId = lease1.getId();
+
+
+        lease1 = manager.getLeaseByID(leaseId);
+        lease1.setPrice(lease2.getPrice());
+        manager.updateLease(lease1);
+        assertThat("price was not changed", lease1.getPrice(), is(equalTo(lease2.getPrice())));
+        assertThat("customer was changed", lease1.getCustomer(), is(equalTo(customer1)));
+        assertThat("car was changed", lease1.getCar(), is(equalTo(car1)));
+
+        lease1 = manager.getLeaseByID(leaseId);
+        lease1.setCustomer(customer2);
+        manager.updateLease(lease1);
+        assertThat("customer was not changed", lease1.getCustomer(), is(equalTo(customer2)));
+        assertThat("car was changed", lease1.getCar(), is(equalTo(car1)));
+
+        lease1 = manager.getLeaseByID(leaseId);
+        lease1.setCar(car2);
+        manager.updateLease(lease1);
+        assertThat("car was not changed", lease1.getCar(), is(equalTo(car2)));
+
+
+        assertDeepEquals(lease2, manager.getLeaseByID(lease2.getId()));
     }
 
     @Test

@@ -19,13 +19,26 @@ public class CarManagerImpl implements CarManager {
         this.dataSource = dataSource;
     }
 
+    private void checkDataSource() {
+        if (dataSource == null) {
+            throw new IllegalStateException("DataSource is not set");
+        }
+    }
+
     public void addCar(Car car) {
+        checkDataSource();
+        if (car == null){
+            throw new IllegalArgumentException("car is null");
+        }
+
         validate(car);
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "INSERT INTO CARS (licensePlate,model,price,numberOfKm) VALUES (?,?,?,?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = null;
+        PreparedStatement st = null;
+        try {
+            conn = dataSource.getConnection();
+            conn.setAutoCommit(false);
+            st = conn.prepareStatement("INSERT INTO CARS (LICENSEPLATE,MODEL,PRICE,NUMBEROFKM) VALUES (?,?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
 
             st.setString(1, car.getLicensePlate());
             st.setString(2, car.getModel());
@@ -39,9 +52,14 @@ public class CarManagerImpl implements CarManager {
 
             ResultSet keyRS = st.getGeneratedKeys();
             car.setId(getKey(keyRS, car));
+            conn.commit();
 
         } catch (SQLException ex) {
             throw new ServiceFailureException("Error when inserting car " + car, ex);
+        }
+        finally{
+            DBUtils.doRollbackQuietly(conn);
+            DBUtils.closeQuietly(conn,st);
         }
     }
 
@@ -66,19 +84,18 @@ public class CarManagerImpl implements CarManager {
         }
     }
 
-    public void deleteCar(Car car) {
+    public void deleteCar(Car car) throws ServiceFailureException {
         validate(car);
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement st = conn.prepareStatement("DELETE FROM CARS WHERE ID = ?");
-        )
-            {st.setLong(1, car.getId());
-            if (st.executeUpdate() == 0) {
-                throw new IllegalArgumentException("Car not found");
+        try (Connection conn = dataSource.getConnection()){
+            try(PreparedStatement st = conn.prepareStatement("DELETE FROM CARS WHERE ID = ?")){
+                st.setLong(1, car.getId());
+                if (st.executeUpdate() != 1) {
+                    throw new ServiceFailureException("did not delete car " + car);
+                }
             }
         } catch (SQLException ex){
-            throw new RuntimeException("Error when deleting car from DB");
+            throw new ServiceFailureException("Error when deleting car from DB", ex);
         }
 
     }
@@ -90,57 +107,60 @@ public class CarManagerImpl implements CarManager {
         }
     }
 
-    public void editCar(Long idOfOriginal, Car updatedCar) {
-        validate(updatedCar);
-
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement st = conn.prepareStatement("UPDATE CARS SET SPZ = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?");
-            )
-
-            {
-            st.setString(1, updatedCar.getLicensePlate());
-            st.setBigDecimal(2, updatedCar.getNumberOfKM());
-            st.setString(3, updatedCar.getModel());
-            st.setBigDecimal(4, updatedCar.getPrice());
-            st.setLong(5, idOfOriginal);
-
-            if(st.executeUpdate() == 0){
-                throw new IllegalArgumentException();
-            }
-
-        } catch(SQLException ex){
-            throw new RuntimeException("Error, when updating car from DB.", ex);
+    public void editCar(Car car) {
+        if(car == null){
+            throw new IllegalArgumentException("car is null");
         }
+        validate(car);
+
+        try (Connection conn = dataSource.getConnection()){
+              try(PreparedStatement st = conn.prepareStatement("UPDATE CARS SET LICENSEPLATE = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?")) {
+                  st.setString(1, car.getLicensePlate());
+                  st.setBigDecimal(2, car.getNumberOfKM());
+                  st.setString(3, car.getModel());
+                  st.setBigDecimal(4, car.getPrice());
+                  st.setLong(5, car.getId());
+                  if (st.executeUpdate() != 1) {
+                      throw new IllegalArgumentException("cannot update car" + car);
+                  }
+              }
+        } catch(SQLException ex){
+            throw new ServiceFailureException("Error, when updating car from DB.", ex);
+        }
+
 
     }
 
-    public List<Car> getAllCars() {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,licensePlate,model,price,numberOfKm FROM cars")) {
+    public List<Car> getAllCars() throws ServiceFailureException{
+        try (Connection connection = dataSource.getConnection()){
+              try(PreparedStatement st = connection.prepareStatement("SELECT id,licensePlate,model,price,numberOfKm FROM cars")) {
 
-            ResultSet rs = st.executeQuery();
+                  ResultSet rs = st.executeQuery();
 
-            List<Car> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(resultSetToCar(rs));
-            }
-            return result;
-
+                  List<Car> result = new ArrayList<>();
+                  while (rs.next()) {
+                      result.add(resultSetToCar(rs));
+                  }
+                  return result;
+              }
         } catch (SQLException ex) {
-            throw new ServiceFailureException(
-                    "Error when retrieving all cars", ex);
+            throw new ServiceFailureException("Error when retrieving all cars", ex);
         }
     }
 
 
     public Car getCarById(Long id) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,licensePlace,model,price,numberOfKm FROM cars WHERE id = ?")) {
+        checkDataSource();
+        if (id == null){
+            throw new IllegalArgumentException("id is null");
+        }
+        if(id < 0){
+            throw new IllegalArgumentException("id is negative ");
+        }
+        Connection conn = null;
+        PreparedStatement st = null;
+        try {conn = dataSource.getConnection();
+             st = conn.prepareStatement("SELECT id,licensePlace,model,price,numberOfKm FROM cars WHERE id = ?");
 
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
@@ -162,6 +182,8 @@ public class CarManagerImpl implements CarManager {
         } catch (SQLException ex) {
             throw new ServiceFailureException(
                     "Error when retrieving car with id " + id, ex);
+        }finally {
+            DBUtils.closeQuietly(conn,st);
         }
     }
 
@@ -177,6 +199,9 @@ public class CarManagerImpl implements CarManager {
     }
 
     public Car getCarByLicensePlate(String licensePlate) {
+        if (licensePlate == null){
+            throw new IllegalArgumentException("license plate is null");
+        }
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement st = connection.prepareStatement(
@@ -185,7 +210,7 @@ public class CarManagerImpl implements CarManager {
             st.setString(1, licensePlate);
             ResultSet rs = st.executeQuery();
 
-            if (rs.next()) {
+            if (rs.first()) {
                 Car car = resultSetToCar(rs);
 
                 if (rs.next()) {
@@ -206,6 +231,17 @@ public class CarManagerImpl implements CarManager {
     }
 
     public boolean getAvailabilityOfCar(Long id) {
+       /* if (id == null){
+            throw new IllegalArgumentException("id is null");
+        }
+        Car car = getCarById(id);
+        List<Lease> leases = findLeasesForCar(car);
+        if()*/
+
+
+
+
+
         return false;
     }
 
