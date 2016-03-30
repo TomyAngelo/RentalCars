@@ -30,10 +30,10 @@ public class LeaseManagerImplTest {
     private CustomerManagerImpl managercust;
     private CarManagerImpl managercar;
     private DataSource ds;
-    private static Car car1 = new Car(1L, "1A1 2547", "Audi A3", new BigDecimal(450), new BigDecimal(23000));
-    private static Car car2 = new Car(2L, "1B3 3546",  "BMW X6", new BigDecimal(340),new BigDecimal(45000));
-    private static Car car3 = new Car(3L, "1T5 6784", "VW PASSAT", new BigDecimal(467), new BigDecimal(57000));
-    private static Car car4 = new Car(4L, "1C3 9809",  "SKODA FABIA", new BigDecimal(450), new BigDecimal(10000));
+    private static Car car1 = new Car(null, "1A1 2547", "Audi A3", new BigDecimal(450), new BigDecimal(23000));
+    private static Car car2 = new Car(null, "1B3 3546",  "BMW X6", new BigDecimal(340),new BigDecimal(45000));
+    private static Car car3 = new Car(null, "1T5 6784", "VW PASSAT", new BigDecimal(467), new BigDecimal(57000));
+    private static Car car4 = new Car(null, "1C3 9809",  "SKODA FABIA", new BigDecimal(450), new BigDecimal(10000));
 
     private static Customer customer1 = new Customer("Michal Vitek", "Vajanskeho 47", "+420746654738");
     private static Customer customer2 = new Customer("Jozko Voracek", "Tlusteho 47", "+420733456980");
@@ -46,7 +46,7 @@ public class LeaseManagerImplTest {
     public void setUp() throws SQLException {
         ds = prepareDataSource();
         try (Connection connection = ds.getConnection()) {
-            connection.prepareStatement("CREATE TABLE LEASE ("
+            connection.prepareStatement("CREATE TABLE LEASES ("
                     + "id bigint primary key generated always as identity,"
                     + "carId int references cars(id) on delete cascade,"
                     + "customerId int references customers(id) on delete cascade,"

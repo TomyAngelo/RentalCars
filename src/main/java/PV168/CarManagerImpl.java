@@ -30,6 +30,9 @@ public class CarManagerImpl implements CarManager {
         if (car == null){
             throw new IllegalArgumentException("car is null");
         }
+        if (car.getId() != null){
+            throw new IllegalArgumentException("new car should not have id");
+        }
 
         validate(car);
         Connection conn = null;
@@ -38,7 +41,7 @@ public class CarManagerImpl implements CarManager {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
             st = conn.prepareStatement("INSERT INTO CARS (LICENSEPLATE,MODEL,PRICE,NUMBEROFKM) VALUES (?,?,?,?)",
-                        Statement.RETURN_GENERATED_KEYS);
+                    Statement.RETURN_GENERATED_KEYS);
 
             st.setString(1, car.getLicensePlate());
             st.setString(2, car.getModel());
@@ -114,16 +117,16 @@ public class CarManagerImpl implements CarManager {
         validate(car);
 
         try (Connection conn = dataSource.getConnection()){
-              try(PreparedStatement st = conn.prepareStatement("UPDATE CARS SET LICENSEPLATE = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?")) {
-                  st.setString(1, car.getLicensePlate());
-                  st.setBigDecimal(2, car.getNumberOfKM());
-                  st.setString(3, car.getModel());
-                  st.setBigDecimal(4, car.getPrice());
-                  st.setLong(5, car.getId());
-                  if (st.executeUpdate() != 1) {
-                      throw new IllegalArgumentException("cannot update car" + car);
-                  }
-              }
+            try(PreparedStatement st = conn.prepareStatement("UPDATE CARS SET LICENSEPLATE = ?, NUMBEROFKM = ?, MODEL = ?, PRICE = ? WHERE ID = ?")) {
+                st.setString(1, car.getLicensePlate());
+                st.setBigDecimal(2, car.getNumberOfKM());
+                st.setString(3, car.getModel());
+                st.setBigDecimal(4, car.getPrice());
+                st.setLong(5, car.getId());
+                if (st.executeUpdate() != 1) {
+                    throw new IllegalArgumentException("cannot update car" + car);
+                }
+            }
         } catch(SQLException ex){
             throw new ServiceFailureException("Error, when updating car from DB.", ex);
         }
@@ -133,16 +136,16 @@ public class CarManagerImpl implements CarManager {
 
     public List<Car> getAllCars() throws ServiceFailureException{
         try (Connection connection = dataSource.getConnection()){
-              try(PreparedStatement st = connection.prepareStatement("SELECT id,licensePlate,model,price,numberOfKm FROM cars")) {
+            try(PreparedStatement st = connection.prepareStatement("SELECT id,licensePlate,model,price,numberOfKm FROM cars")) {
 
-                  ResultSet rs = st.executeQuery();
+                ResultSet rs = st.executeQuery();
 
-                  List<Car> result = new ArrayList<>();
-                  while (rs.next()) {
-                      result.add(resultSetToCar(rs));
-                  }
-                  return result;
-              }
+                List<Car> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(resultSetToCar(rs));
+                }
+                return result;
+            }
         } catch (SQLException ex) {
             throw new ServiceFailureException("Error when retrieving all cars", ex);
         }
@@ -160,7 +163,7 @@ public class CarManagerImpl implements CarManager {
         Connection conn = null;
         PreparedStatement st = null;
         try {conn = dataSource.getConnection();
-             st = conn.prepareStatement("SELECT id,licensePlace,model,price,numberOfKm FROM cars WHERE id = ?");
+            st = conn.prepareStatement("SELECT ID, LICENSEPLATE, MODEL, PRICE, NUMBEROFKM FROM CARS WHERE ID = ?");
 
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
@@ -202,15 +205,16 @@ public class CarManagerImpl implements CarManager {
         if (licensePlate == null){
             throw new IllegalArgumentException("license plate is null");
         }
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement st = connection.prepareStatement(
-                        "SELECT id,licensePlace,model,price,numberOfKm FROM cars WHERE licensePlate = ?")) {
+        Connection conn = null;
+        PreparedStatement st = null;
+        try {conn = dataSource.getConnection();
+            st = conn.prepareStatement(
+                        "SELECT ID, LICENSEPLATE, MODEL, PRICE, NUMBEROFKM FROM CARS WHERE LICENSEPLATE = ?");
 
             st.setString(1, licensePlate);
             ResultSet rs = st.executeQuery();
 
-            if (rs.first()) {
+            if (rs.next()) {
                 Car car = resultSetToCar(rs);
 
                 if (rs.next()) {
@@ -249,9 +253,6 @@ public class CarManagerImpl implements CarManager {
         if (car == null) {
             throw new IllegalArgumentException("Car is null");
         }
-        if (car.getId() == null) {
-            throw new IllegalArgumentException("Car id is null");
-        }
         if (car.getLicensePlate()== null || car.getLicensePlate().isEmpty()) {
             throw new IllegalArgumentException("Car license plate is null or empty");
         }
@@ -266,3 +267,7 @@ public class CarManagerImpl implements CarManager {
         }
     }
 }
+
+
+
+

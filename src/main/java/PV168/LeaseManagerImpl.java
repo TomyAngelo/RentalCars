@@ -395,6 +395,11 @@ public class LeaseManagerImpl implements LeaseManager {
         }
     }
 
+    @Override
+    public boolean getAvailabilityOfCar(Car car) {
+        return false;
+    }
+
     public void deleteAllLeases() {
         Collection<Lease> leases = new ArrayList<>(getAllLeases());
         for(Lease l : leases) {
