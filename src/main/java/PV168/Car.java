@@ -13,8 +13,7 @@ public class Car {
     private BigDecimal price;
     private BigDecimal numberOfKM;
 
-    public Car(Long id, String licensePlate, String model, BigDecimal price, BigDecimal numberOfKM) {
-        this.id = id;
+    public Car(String licensePlate, String model, BigDecimal price, BigDecimal numberOfKM) {
         this.licensePlate = licensePlate;
         this.model = model;
         this.price = price;

@@ -22,10 +22,15 @@ public class LeaseManagerImpl implements LeaseManager {
     private CarManagerImpl carManager;
 
     public LeaseManagerImpl(Clock clock,DataSource dataSource) {
-        this.dataSource = dataSource;
+        setDataSource(dataSource);
         customerManager = new CustomerManagerImpl(dataSource);
         carManager = new CarManagerImpl(dataSource);
         this.clock = clock;
+    }
+    //public LeaseManagerImpl(){};
+
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     private void checkDataSource() {
@@ -42,9 +47,9 @@ public class LeaseManagerImpl implements LeaseManager {
         if(lease.getId() != null){
             throw new IllegalArgumentException("ID should be null");
         }
-        if(lease.getDateFrom() != null ){
-            throw new IllegalArgumentException("Date from should be null");
-        }
+//        if(lease.getDateFrom() != null ){
+//            throw new IllegalArgumentException("Date from should be null");
+//        }
 
         if(lease.getDateTo().isBefore(lease.getDateFrom()) ){
             throw new IllegalArgumentException("Date to should not be before date from");
@@ -83,7 +88,7 @@ public class LeaseManagerImpl implements LeaseManager {
             lease.setDateFrom(today);
             conn.commit();
         } catch (SQLException ex) {
-            throw new ServiceFailureException("Error when creating dragons", ex);
+           // throw new ServiceFailureException("Error when creating cars", ex);
         } finally{
             DBUtils.doRollbackQuietly(conn);
             DBUtils.closeQuietly(conn,st);
@@ -94,19 +99,19 @@ public class LeaseManagerImpl implements LeaseManager {
         if (keyRS.next()) {
             if (keyRS.getMetaData().getColumnCount() != 1) {
                 throw new ServiceFailureException("Internal Error: Generated key"
-                        + "retrieving failed when trying to insert grave " + lease
+                        + "retrieving failed when trying to insert lease " + lease
                         + " - wrong key fields count: " + keyRS.getMetaData().getColumnCount());
             }
             Long result = keyRS.getLong(1);
             if (keyRS.next()) {
                 throw new ServiceFailureException("Internal Error: Generated key"
-                        + "retrieving failed when trying to insert grave " + lease
+                        + "retrieving failed when trying to insert lease " + lease
                         + " - more keys found");
             }
             return result;
         } else {
             throw new ServiceFailureException("Internal Error: Generated key"
-                    + "retrieving failed when trying to insert grave " + lease
+                    + "retrieving failed when trying to insert lease " + lease
                     + " - no key found");
         }
     }
@@ -372,10 +377,6 @@ public class LeaseManagerImpl implements LeaseManager {
             throw new IllegalArgumentException("lease id is null");
         }
 
-        if(lease.getRealEndDate() == null){
-            throw new IllegalArgumentException("car is not returned yet");
-        }
-
         Connection conn = null;
         PreparedStatement st = null;
         try{
@@ -408,6 +409,10 @@ public class LeaseManagerImpl implements LeaseManager {
     }
 
     private void validateLease(Lease lease) {
+        if(lease==null){
+            throw new IllegalArgumentException("Lease is null");
+        }
+
         if(lease.getCustomer() == null){
             throw new IllegalArgumentException("Customer is null");
         }

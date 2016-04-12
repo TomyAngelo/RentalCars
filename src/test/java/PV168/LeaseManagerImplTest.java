@@ -30,32 +30,65 @@ public class LeaseManagerImplTest {
     private CustomerManagerImpl managercust;
     private CarManagerImpl managercar;
     private DataSource ds;
-    private static Car car1 = new Car(null, "1A1 2547", "Audi A3", new BigDecimal(450), new BigDecimal(23000));
-    private static Car car2 = new Car(null, "1B3 3546",  "BMW X6", new BigDecimal(340),new BigDecimal(45000));
-    private static Car car3 = new Car(null, "1T5 6784", "VW PASSAT", new BigDecimal(467), new BigDecimal(57000));
-    private static Car car4 = new Car(null, "1C3 9809",  "SKODA FABIA", new BigDecimal(450), new BigDecimal(10000));
+    private static Car car1;
+    private static Car car2;
+    private static Car car3;
+    private static Car car4;
 
-    private static Customer customer1 = new Customer("Michal Vitek", "Vajanskeho 47", "+420746654738");
-    private static Customer customer2 = new Customer("Jozko Voracek", "Tlusteho 47", "+420733456980");
-    private static Customer customer3 = new Customer("David Konecny", "Lokalni 23", "+420723434580");
+    private static Customer customer1;
+    private static Customer customer2;
+    private static Customer customer3;
 
     public LeaseManagerImplTest() {
     }
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Before
     public void setUp() throws SQLException {
+         car1 = new Car( "1A1 2547", "Audi A3", new BigDecimal(450), new BigDecimal(23000));
+         car2 = new Car( "1B3 3546",  "BMW X6", new BigDecimal(340),new BigDecimal(45000));
+         car3 = new Car( "1T5 6784", "VW PASSAT", new BigDecimal(467), new BigDecimal(57000));
+         car4 = new Car( "1C3 9809",  "SKODA FABIA", new BigDecimal(450), new BigDecimal(10000));
+
+        customer1 = new Customer("Michal Vitek", "Vajanskeho 47", "+420746654738");
+        customer2 = new Customer("Jozko Voracek", "Tlusteho 47", "+420733456980");
+        customer3 = new Customer("David Konecny", "Lokalni 23", "+420723434580");
+
         ds = prepareDataSource();
         try (Connection connection = ds.getConnection()) {
+
+            connection.prepareStatement("CREATE TABLE CUSTOMERS ("
+                    + "ID BIGINT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
+                    + "NAME VARCHAR(255) NOT NULL,"
+                    + "ADDRESS VARCHAR(255) NOT NULL,"
+                    + "PHONENUMBER VARCHAR(255) NOT NULL)").executeUpdate();
+
+            connection.prepareStatement("CREATE TABLE CARS ("
+                   + "ID BIGINT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
+                   + "LICENSEPLATE VARCHAR(255) NOT NULL,"
+                   + "MODEL VARCHAR(255) NOT NULL,"
+                   + "PRICE DECIMAL,"
+                   + "NUMBEROFKM DECIMAL)").executeUpdate();
+
             connection.prepareStatement("CREATE TABLE LEASES ("
-                    + "id bigint primary key generated always as identity,"
-                    + "carId int references cars(id) on delete cascade,"
-                    + "customerId int references customers(id) on delete cascade,"
-                    + "price int,"
-                    + "dateFrom date,"
-                    + "dateTo date,"
-                    + "realEndDate timestamp)").executeUpdate();
+                    + "ID BIGINT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
+                    + "IDCUSTOMER BIGINT REFERENCES CUSTOMERS(ID) ON DELETE CASCADE,"
+                    + "IDCAR BIGINT REFERENCES CARS(ID) ON DELETE CASCADE,"
+                    + "DATEFROM DATE,"
+                    + "DATETO DATE,"
+                    + "REALENDDATE DATE,"
+                    + "PRICE DECIMAL)").executeUpdate();
         }
         manager = new LeaseManagerImpl(Clock.systemUTC(), ds);
+        managercar=new CarManagerImpl(ds);
+        managercust=new CustomerManagerImpl(ds);
+
+
+//        DBUtils.executeSqlScript(ds,LeaseManager.class.getResource("createTables.sql"));
+//        manager= new LeaseManagerImpl(null,ds); //?????????
+//        manager.setDataSource(ds);
     }
 
 
@@ -63,12 +96,15 @@ public class LeaseManagerImplTest {
     public void tearDown() throws SQLException {
         try (Connection connection = ds.getConnection()) {
             connection.prepareStatement("DROP TABLE LEASES").executeUpdate();
+            connection.prepareStatement("DROP TABLE CUSTOMERS").executeUpdate();
+            connection.prepareStatement("DROP TABLE CARS").executeUpdate();
+
         }
+        //DBUtils.executeSqlScript(ds,LeaseManager.class.getResource("dropTables.sql"));
     }
 
     private static DataSource prepareDataSource() throws SQLException {
         EmbeddedDataSource ds = new EmbeddedDataSource();
-        //we will use in memory database
         ds.setDatabaseName("memory:leasemgr-test");
         ds.setCreateDatabase("create");
         return ds;
@@ -77,20 +113,19 @@ public class LeaseManagerImplTest {
     @Test
     public void testCreateLease() throws Exception {
         Lease rent = new Lease();
-        rent.setId(1L);
         rent.setPrice(new BigDecimal(12000));
-        rent.setRealEndDate(LocalDate.of(2016,3,28));
-        rent.setDateFrom(LocalDate.of(2016,3,25));
-        rent.setDateTo(LocalDate.of(2016,3,29));
+        rent.setRealEndDate(LocalDate.of(2017,3,28));
+        rent.setDateFrom(LocalDate.of(2017,3,25));
+        rent.setDateTo(LocalDate.of(2017,3,27));
         rent.setCustomer(customer1);
         rent.setCar(car1);
-        }
+    }
 
     @Test
     public void testGetLeaseByID() throws Exception {
-        manager.deleteAllLeases();
-        managercar.deleteAllCars();
-        managercust.deleteAllCustomers();
+//        manager.deleteAllLeases();
+//        managercar.deleteAllCars();
+//        managercust.deleteAllCustomers();
 
         managercust.createCustomer(customer1);
 
@@ -430,11 +465,10 @@ public class LeaseManagerImplTest {
 
     private static Lease createLease1() {
         Lease lease = new Lease();
-        lease.setId(1L);
         lease.setPrice(new BigDecimal(12000));
-        lease.setRealEndDate(LocalDate.of(2016,3,28));
-        lease.setDateFrom(LocalDate.of(2016,3,25));
-        lease.setDateTo(LocalDate.of(2016,3,29));
+        lease.setRealEndDate(LocalDate.of(2017,3,28));
+        lease.setDateFrom(LocalDate.of(2017,3,25));
+        lease.setDateTo(LocalDate.of(2017,3,27));
         lease.setCustomer(customer1);
         lease.setCar(car1);
         return lease;
@@ -442,11 +476,10 @@ public class LeaseManagerImplTest {
 
     private static Lease createLease2() {
         Lease lease = new Lease();
-        lease.setId(2L);
         lease.setPrice(new BigDecimal(10000));
-        lease.setRealEndDate(LocalDate.of(2016,2,28));
-        lease.setDateFrom(LocalDate.of(2016,2,25));
-        lease.setDateTo(LocalDate.of(2016,2,29));
+        lease.setRealEndDate(LocalDate.of(2017,2,28));
+        lease.setDateFrom(LocalDate.of(2017,2,25));
+        lease.setDateTo(LocalDate.of(2017,2,27));
         lease.setCustomer(customer2);
         lease.setCar(car2);
         return lease;
@@ -454,11 +487,10 @@ public class LeaseManagerImplTest {
 
     private static Lease createLease3() {
         Lease lease = new Lease();
-        lease.setId(3L);
         lease.setPrice(new BigDecimal(14000));
-        lease.setRealEndDate(LocalDate.of(2016,3,18));
-        lease.setDateFrom(LocalDate.of(2016,3,15));
-        lease.setDateTo(LocalDate.of(2016,3,19));
+        lease.setRealEndDate(LocalDate.of(2017,3,18));
+        lease.setDateFrom(LocalDate.of(2017,3,15));
+        lease.setDateTo(LocalDate.of(2017,3,19));
         lease.setCustomer(customer3);
         lease.setCar(car3);
         return lease;

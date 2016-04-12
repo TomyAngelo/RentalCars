@@ -61,7 +61,7 @@ public class CarManagerImplTest {
 
     @Test
     public void testAddCar() throws Exception {
-        Car car = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         manager.addCar(car);
         Long carId = car.getId();
         assertThat("saved car has null id",car.getId(),is(not(equalTo(null))));
@@ -75,7 +75,7 @@ public class CarManagerImplTest {
 
     @Test
     public void testAddCarErrors() {
-        Car car = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         //when we try to add null, we should get an exception
         try {
             manager.addCar(null);
@@ -143,7 +143,7 @@ public class CarManagerImplTest {
             fail();
         } catch (IllegalArgumentException e) {
         }
-        Car car = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         //try delete nonexistent car
         //car.setId(-1L);
 //        try {
@@ -160,8 +160,8 @@ public class CarManagerImplTest {
 
     @Test
     public void testEditCar() throws Exception {
-        Car car1 = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
-        Car car2 = new Car(null, "5M1 2164", "Skoda Octavia", new BigDecimal(4000), new BigDecimal(40000));
+        Car car1 = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car2 = new Car( "5M1 2164", "Skoda Octavia", new BigDecimal(4000), new BigDecimal(40000));
         manager.addCar(car1);
         manager.addCar(car2);
 
@@ -190,8 +190,8 @@ public class CarManagerImplTest {
 
     @Test
     public void testGetAllCars() throws Exception {
-        Car car1 = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
-        Car car2 = new Car(null, "5M1 2164", "Skoda Octavia", new BigDecimal(4000), new BigDecimal(40000));
+        Car car1 = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car2 = new Car( "5M1 2164", "Skoda Octavia", new BigDecimal(4000), new BigDecimal(40000));
 
         manager.addCar(car1);
         manager.addCar(car2);
@@ -211,7 +211,7 @@ public class CarManagerImplTest {
             fail();
         } catch (IllegalArgumentException e) {
         }
-        Car car = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         manager.addCar(car);
         //try find car by nonexistent argument
         assertNull("license plate does not exist",manager.getCarById(Long.MAX_VALUE));
@@ -232,7 +232,7 @@ public class CarManagerImplTest {
             fail();
         } catch (IllegalArgumentException e) {
         }
-        Car car = new Car(null, "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
+        Car car = new Car( "4M2 3000", "Volkswagen Passat", new BigDecimal(5000), new BigDecimal(20000));
         manager.addCar(car);
         //try find car by nonexistent argument
 
