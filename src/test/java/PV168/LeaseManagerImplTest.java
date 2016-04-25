@@ -78,17 +78,11 @@ public class LeaseManagerImplTest {
                     + "IDCAR BIGINT REFERENCES CARS(ID) ON DELETE CASCADE,"
                     + "DATEFROM DATE,"
                     + "DATETO DATE,"
-                    + "REALENDDATE DATE,"
                     + "PRICE DECIMAL)").executeUpdate();
         }
         manager = new LeaseManagerImpl(Clock.systemUTC(), ds);
         managercar=new CarManagerImpl(ds);
         managercust=new CustomerManagerImpl(ds);
-
-
-//        DBUtils.executeSqlScript(ds,LeaseManager.class.getResource("createTables.sql"));
-//        manager= new LeaseManagerImpl(null,ds); //?????????
-//        manager.setDataSource(ds);
     }
 
 
@@ -114,7 +108,6 @@ public class LeaseManagerImplTest {
     public void testCreateLease() throws Exception {
         Lease rent = new Lease();
         rent.setPrice(new BigDecimal(12000));
-        rent.setRealEndDate(LocalDate.of(2017,3,28));
         rent.setDateFrom(LocalDate.of(2017,3,25));
         rent.setDateTo(LocalDate.of(2017,3,27));
         rent.setCustomer(customer1);
@@ -123,10 +116,6 @@ public class LeaseManagerImplTest {
 
     @Test
     public void testGetLeaseByID() throws Exception {
-//        manager.deleteAllLeases();
-//        managercar.deleteAllCars();
-//        managercust.deleteAllCustomers();
-
         managercust.createCustomer(customer1);
 
         managercar.addCar(car1);
@@ -216,9 +205,9 @@ public class LeaseManagerImplTest {
         Collections.sort(actual, idComparator);
         Collections.sort(expected, idComparator);
         //should be the same
-        assertEquals(lease2, res.get(1));
+        assertEquals(lease2, res.get(0));
 
-        assertDeepEquals(lease2, res.get(1));
+        assertDeepEquals(lease2, res.get(0));
 
         expected = Arrays.asList(lease1, lease2);
         actual = manager.getAllLeases();
@@ -272,9 +261,9 @@ public class LeaseManagerImplTest {
         Collections.sort(actual, idComparator);
         Collections.sort(expected, idComparator);
         //should be the same
-        assertEquals(lease2, res.get(1));
+        assertEquals(lease2, res.get(0));
 
-        assertDeepEquals(lease2, res.get(1));
+        assertDeepEquals(lease2, res.get(0));
 
         expected = Arrays.asList(lease1, lease2);
         actual = manager.getAllLeases();
@@ -330,9 +319,9 @@ public class LeaseManagerImplTest {
         Collections.sort(expected, idComparator);
 
         //should be the same
-        assertEquals(lease2, res.get(1));
+        assertEquals(lease2, res.get(0));
 
-        assertDeepEquals(lease2, res.get(1));
+        assertDeepEquals(lease2, res.get(0));
 
         expected = Arrays.asList(lease1, lease2);
         actual = manager.getAllLeases();
@@ -346,19 +335,18 @@ public class LeaseManagerImplTest {
 
     @Test
     public void testUpdateLease() throws Exception {
-        manager.deleteAllLeases();
-        managercar.deleteAllCars();
-        managercust.deleteAllCustomers();
-
         managercust.createCustomer(customer1);
         managercust.createCustomer(customer2);
 
         managercar.addCar(car1);
         managercar.addCar(car2);
+        managercar.addCar(car3);
 
         Lease lease1 = createLease1();
-        Lease lease2 = createLease2();
+        manager.createLease(lease1);
 
+        Lease lease2 = createLease2();
+        manager.createLease(lease2);
         Long leaseId = lease1.getId();
 
 
@@ -376,9 +364,9 @@ public class LeaseManagerImplTest {
         assertThat("car was changed", lease1.getCar(), is(equalTo(car1)));
 
         lease1 = manager.getLeaseByID(leaseId);
-        lease1.setCar(car2);
+        lease1.setCar(car3);
         manager.updateLease(lease1);
-        assertThat("car was not changed", lease1.getCar(), is(equalTo(car2)));
+        assertThat("car was not changed", lease1.getCar(), is(equalTo(car3)));
 
 
         assertDeepEquals(lease2, manager.getLeaseByID(lease2.getId()));
@@ -466,7 +454,6 @@ public class LeaseManagerImplTest {
     private static Lease createLease1() {
         Lease lease = new Lease();
         lease.setPrice(new BigDecimal(12000));
-        lease.setRealEndDate(LocalDate.of(2017,3,28));
         lease.setDateFrom(LocalDate.of(2017,3,25));
         lease.setDateTo(LocalDate.of(2017,3,27));
         lease.setCustomer(customer1);
@@ -477,7 +464,6 @@ public class LeaseManagerImplTest {
     private static Lease createLease2() {
         Lease lease = new Lease();
         lease.setPrice(new BigDecimal(10000));
-        lease.setRealEndDate(LocalDate.of(2017,2,28));
         lease.setDateFrom(LocalDate.of(2017,2,25));
         lease.setDateTo(LocalDate.of(2017,2,27));
         lease.setCustomer(customer2);
@@ -488,7 +474,6 @@ public class LeaseManagerImplTest {
     private static Lease createLease3() {
         Lease lease = new Lease();
         lease.setPrice(new BigDecimal(14000));
-        lease.setRealEndDate(LocalDate.of(2017,3,18));
         lease.setDateFrom(LocalDate.of(2017,3,15));
         lease.setDateTo(LocalDate.of(2017,3,19));
         lease.setCustomer(customer3);
@@ -509,7 +494,6 @@ public class LeaseManagerImplTest {
         assertEquals(expected.getId(), actual.getId());
         assertEquals(expected.getDateFrom(), actual.getDateFrom());
         assertEquals(expected.getDateTo(), actual.getDateTo());
-        assertEquals(expected.getRealEndDate(), actual.getRealEndDate());
         assertEquals(expected.getPrice(), actual.getPrice());
         assertEquals(expected.getCustomer(), actual.getCustomer());
         assertEquals(expected.getCar(), actual.getCar());

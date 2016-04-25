@@ -27,7 +27,6 @@ public interface LeaseManager {
 
     public void deleteLease(Lease lease);
 
-    boolean getAvailabilityOfCar (Car car);
 
 
 }

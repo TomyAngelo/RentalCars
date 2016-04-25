@@ -12,6 +12,7 @@ public class Car {
     private String model;
     private BigDecimal price;
     private BigDecimal numberOfKM;
+    private boolean isBorrowed;
 
     public Car(String licensePlate, String model, BigDecimal price, BigDecimal numberOfKM) {
         this.licensePlate = licensePlate;
@@ -61,6 +62,14 @@ public class Car {
 
     public void setNumberOfKM(BigDecimal numberOfKM) {
         this.numberOfKM = numberOfKM;
+    }
+
+    public boolean getIsBorrowed() {
+        return isBorrowed;
+    }
+
+    public void setIsBorrowed(boolean borrowed) {
+        isBorrowed = borrowed;
     }
 
     @Override

@@ -14,19 +14,18 @@ public class Lease {
     private LocalDate dateFrom;
     private LocalDate dateTo;
     private BigDecimal price;
-    private LocalDate realEndDate;
 
-    public Lease(Long id, Customer customer, Car car, LocalDate dateFrom, BigDecimal price, LocalDate dateTo, LocalDate realEndDate) {
+
+    public Lease(Long id, Customer customer, Car car, LocalDate dateFrom, BigDecimal price, LocalDate dateTo) {
         this.id = id;
         this.customer = customer;
         this.car = car;
         this.dateFrom = dateFrom;
         this.price = price;
         this.dateTo = dateTo;
-        this.realEndDate = realEndDate;
     }
 
-    public Lease(){
+    public Lease() {
 
     }
 
@@ -50,10 +49,6 @@ public class Lease {
         return price;
     }
 
-    public LocalDate getRealEndDate() {
-        return realEndDate;
-    }
-
     public void setCustomer(Customer customer) {
         this.customer = customer;
     }
@@ -74,10 +69,6 @@ public class Lease {
         this.price = price;
     }
 
-    public void setRealEndDate(LocalDate realEndDate) {
-        this.realEndDate = realEndDate;
-    }
-
     public Long getId() {
         return id;
     }
@@ -86,6 +77,9 @@ public class Lease {
         this.id = id;
     }
 
+
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -93,25 +87,23 @@ public class Lease {
 
         Lease lease = (Lease) o;
 
-        if (!id.equals(lease.id)) return false;
-        if (!customer.equals(lease.customer)) return false;
-        if (!car.equals(lease.car)) return false;
-        if (!dateFrom.equals(lease.dateFrom)) return false;
-        if (!dateTo.equals(lease.dateTo)) return false;
-        if (!price.equals(lease.price)) return false;
-        return realEndDate.equals(lease.realEndDate);
+        if (id != null ? !id.equals(lease.id) : lease.id != null) return false;
+        if (customer != null ? !customer.equals(lease.customer) : lease.customer != null) return false;
+        if (car != null ? !car.equals(lease.car) : lease.car != null) return false;
+        if (dateFrom != null ? !dateFrom.equals(lease.dateFrom) : lease.dateFrom != null) return false;
+        if (dateTo != null ? !dateTo.equals(lease.dateTo) : lease.dateTo != null) return false;
+        return price != null ? price.equals(lease.price) : lease.price == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + customer.hashCode();
-        result = 31 * result + car.hashCode();
-        result = 31 * result + dateFrom.hashCode();
-        result = 31 * result + dateTo.hashCode();
-        result = 31 * result + price.hashCode();
-        result = 31 * result + realEndDate.hashCode();
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (customer != null ? customer.hashCode() : 0);
+        result = 31 * result + (car != null ? car.hashCode() : 0);
+        result = 31 * result + (dateFrom != null ? dateFrom.hashCode() : 0);
+        result = 31 * result + (dateTo != null ? dateTo.hashCode() : 0);
+        result = 31 * result + (price != null ? price.hashCode() : 0);
         return result;
     }
 
@@ -124,7 +116,6 @@ public class Lease {
                 ", dateFrom=" + dateFrom +
                 ", dateTo=" + dateTo +
                 ", price=" + price +
-                ", realEndDate=" + realEndDate +
                 '}';
     }
 }

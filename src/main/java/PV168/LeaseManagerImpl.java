@@ -17,7 +17,6 @@ import java.util.List;
 public class LeaseManagerImpl implements LeaseManager {
 
     private DataSource dataSource;
-    private final Clock clock;
     private CustomerManagerImpl customerManager;
     private CarManagerImpl carManager;
 
@@ -25,9 +24,8 @@ public class LeaseManagerImpl implements LeaseManager {
         setDataSource(dataSource);
         customerManager = new CustomerManagerImpl(dataSource);
         carManager = new CarManagerImpl(dataSource);
-        this.clock = clock;
     }
-    //public LeaseManagerImpl(){};
+
 
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -47,21 +45,19 @@ public class LeaseManagerImpl implements LeaseManager {
         if(lease.getId() != null){
             throw new IllegalArgumentException("ID should be null");
         }
-//        if(lease.getDateFrom() != null ){
-//            throw new IllegalArgumentException("Date from should be null");
-//        }
 
         if(lease.getDateTo().isBefore(lease.getDateFrom()) ){
             throw new IllegalArgumentException("Date to should not be before date from");
         }
-        LocalDate today = LocalDate.now(clock);
 
-        if(lease.getDateTo().isBefore(today)){
-            throw new IllegalArgumentException("Date to is before today");
+
+        if(lease.getCar().getIsBorrowed()){
+            throw new IllegalArgumentException("Car is already borrowed");
         }
-        // ked uz je auto pozicane
 
-        Connection conn =null;
+
+
+        Connection conn = null;
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
@@ -85,10 +81,10 @@ public class LeaseManagerImpl implements LeaseManager {
 
             ResultSet keyRS = st.getGeneratedKeys();
             lease.setId(getKey(keyRS, lease));
-            lease.setDateFrom(today);
+            lease.getCar().setIsBorrowed(true);
             conn.commit();
         } catch (SQLException ex) {
-           // throw new ServiceFailureException("Error when creating cars", ex);
+            throw new ServiceFailureException("Error when creating cars", ex);
         } finally{
             DBUtils.doRollbackQuietly(conn);
             DBUtils.closeQuietly(conn,st);
@@ -132,7 +128,7 @@ public class LeaseManagerImpl implements LeaseManager {
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
-            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, REALENDDATE, PRICE FROM LEASES WHERE ID=?");
+            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, PRICE FROM LEASES WHERE ID=?");
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
             if(rs.next()){
@@ -160,9 +156,8 @@ public class LeaseManagerImpl implements LeaseManager {
         lease.setCar(carManager.getCarById (rs.getLong("IDCAR")));
         lease.setDateFrom(toLocalDate(rs.getDate("DATEFROM")));
         lease.setDateTo(toLocalDate(rs.getDate("DATETO")));
-        lease.setRealEndDate(toLocalDate(rs.getDate("REALENDDATE")));
         try {
-            lease.setPrice(rs.getBigDecimal("PRICE").setScale(2));
+            lease.setPrice(rs.getBigDecimal("PRICE"));
         } catch (ArithmeticException ex) {
             throw new ServiceFailureException("bad BigDecimal value");
         }
@@ -176,7 +171,7 @@ public class LeaseManagerImpl implements LeaseManager {
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
-            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, REALENDDATE, PRICE FROM LEASES");
+            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, PRICE FROM LEASES");
             ResultSet rs = st.executeQuery();
             List<Lease> leases= new ArrayList<>();
             while(rs.next()){
@@ -201,7 +196,7 @@ public class LeaseManagerImpl implements LeaseManager {
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
-            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, REALENDDATE, PRICE FROM LEASES WHERE ENDDATE=?");
+            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, PRICE FROM LEASES WHERE DATETO=?");
             st.setDate(1, toSqlDate(endDate));
             ResultSet rs = st.executeQuery();
             List<Lease> leases= new ArrayList<>();
@@ -229,7 +224,7 @@ public class LeaseManagerImpl implements LeaseManager {
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
-            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, REALENDDATE, PRICE FROM LEASES WHERE IDCUSTOMER=?");
+            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, PRICE FROM LEASES WHERE IDCUSTOMER=?");
             st.setLong(1, customer.getId());
             ResultSet rs = st.executeQuery();
             List<Lease> leases= new ArrayList<>();
@@ -259,7 +254,7 @@ public class LeaseManagerImpl implements LeaseManager {
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
-            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, REALENDDATE, PRICE FROM LEASES WHERE IDCAR=?");
+            st = conn.prepareStatement("SELECT ID, IDCUSTOMER, IDCAR, DATEFROM, DATETO, PRICE FROM LEASES WHERE IDCAR=?");
             st.setLong(1, car.getId());
             ResultSet rs = st.executeQuery();
             List<Lease> leases= new ArrayList<>();
@@ -286,18 +281,8 @@ public class LeaseManagerImpl implements LeaseManager {
             throw new IllegalArgumentException("Date from is null");
         }
 
-        if(lease.getRealEndDate() != null && lease.getRealEndDate().isBefore(lease.getDateFrom())){
-            throw new IllegalArgumentException("Date from is after real end date.");
-        }
-
         if(lease.getDateTo().isBefore(lease.getDateFrom())){
             throw new IllegalArgumentException("Date to is after real end date.");
-        }
-
-        if(lease.getRealEndDate() == null){
-            if(checkCarID(lease.getId(), lease.getCar())){
-                throw new IllegalArgumentException("Car is borrowed in another lease");
-            }
         }
 
         Connection conn = null;
@@ -305,25 +290,19 @@ public class LeaseManagerImpl implements LeaseManager {
         try{
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
-            st = conn.prepareStatement("UPDATE LEASES SET IDCUSTOMER=?, IDCAR=?, DATEFROM=?, DATETO=?, REALENDDATE=?, PRICE=? WHERE id=?");
+            st = conn.prepareStatement("UPDATE LEASES SET IDCUSTOMER=?, IDCAR=?, DATEFROM=?, DATETO=?, PRICE=? WHERE id=?");
             st.setLong(1, lease.getCustomer().getId());
             st.setLong(2, lease.getCar().getId());
             st.setDate(3, toSqlDate(lease.getDateFrom()));
             st.setDate(4, toSqlDate(lease.getDateTo()));
 
-            if(lease.getRealEndDate() == null){
-                st.setNull(5,Types.DATE);
-            }else{
-                st.setDate(5, toSqlDate(lease.getRealEndDate()));
-            }
-
             try {
-                st.setBigDecimal(6, lease.getPrice().setScale(2));
+                st.setBigDecimal(5, lease.getPrice().setScale(2));
             } catch (ArithmeticException ex){
                 throw new ServiceFailureException("bad BigDecimal value");
             }
 
-            st.setLong(7, lease.getId());
+            st.setLong(6, lease.getId());
             if(st.executeUpdate() != 1) {
                 throw new IllegalArgumentException("lease with id=" + lease.getId() + " do not exist");
             }
@@ -349,7 +328,7 @@ public class LeaseManagerImpl implements LeaseManager {
         PreparedStatement st = null;
         try{
             conn = dataSource.getConnection();
-            st = conn.prepareStatement("SELECT ID, IDCAR, REALENDDATE FROM LEASES WHERE IDCAR=? AND REALENDDATE IS NULL");
+            st = conn.prepareStatement("SELECT ID, IDCAR FROM LEASES WHERE IDCAR=? ");
             st.setLong(1, car.getId());
             ResultSet rs = st.executeQuery();
 
@@ -360,7 +339,7 @@ public class LeaseManagerImpl implements LeaseManager {
             }
 
         } catch (SQLException ex){
-            throw new ServiceFailureException("Error when lease for dragon", ex);
+            throw new ServiceFailureException("Error when lease for car", ex);
         }finally {
             DBUtils.closeQuietly(conn,st);
         }
@@ -387,6 +366,7 @@ public class LeaseManagerImpl implements LeaseManager {
             if(st.executeUpdate() != 1) {
                 throw new IllegalArgumentException("lease with id=" + lease.getId() + " do not exist");
             }
+            lease.getCar().setIsBorrowed(false);
             conn.commit();
         } catch(SQLException ex) {
             throw new ServiceFailureException("Error when deleting lease", ex);
@@ -396,10 +376,7 @@ public class LeaseManagerImpl implements LeaseManager {
         }
     }
 
-    @Override
-    public boolean getAvailabilityOfCar(Car car) {
-        return false;
-    }
+
 
     public void deleteAllLeases() {
         Collection<Lease> leases = new ArrayList<>(getAllLeases());
