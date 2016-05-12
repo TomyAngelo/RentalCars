@@ -1,15 +1,14 @@
 package PV168;
 
-/**
- * Created by TomyAngelo on 28. 3. 2016.
- */
-import java.io.IOException;
-import java.io.InputStreamReader;
+import org.apache.commons.dbcp.BasicDataSource;
+
+import java.io.*;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
@@ -21,7 +20,7 @@ import javax.sql.DataSource;
  */
 public class DBUtils {
 
-    private static final Logger logger = Logger.getLogger(
+    private static final Logger log = Logger.getLogger(
             DBUtils.class.getName());
 
     /**
@@ -36,7 +35,7 @@ public class DBUtils {
                 try {
                     st.close();
                 } catch (SQLException ex) {
-                    logger.log(Level.SEVERE, "Error when closing statement", ex);
+                    log.log(Level.SEVERE, "Error when closing statement", ex);
                 }
             }
         }
@@ -44,12 +43,12 @@ public class DBUtils {
             try {
                 conn.setAutoCommit(true);
             } catch (SQLException ex) {
-                logger.log(Level.SEVERE, "Error when switching autocommit mode back to true", ex);
+                log.log(Level.SEVERE, "Error when switching autocommit mode back to true", ex);
             }
             try {
                 conn.close();
             } catch (SQLException ex) {
-                logger.log(Level.SEVERE, "Error when closing connection", ex);
+                log.log(Level.SEVERE, "Error when closing connection", ex);
             }
         }
     }
@@ -67,7 +66,7 @@ public class DBUtils {
                 }
                 conn.rollback();
             } catch (SQLException ex) {
-                logger.log(Level.SEVERE, "Error when doing rollback", ex);
+                log.log(Level.SEVERE, "Error when doing rollback", ex);
             }
         }
     }
@@ -130,7 +129,7 @@ public class DBUtils {
     public static void tryCreateTables(DataSource ds, URL scriptUrl) throws SQLException {
         try {
             executeSqlScript(ds, scriptUrl);
-            logger.warning("Tables created");
+            log.log(Level.INFO, "Tables created");
         } catch (SQLException ex) {
             if ("X0Y32".equals(ex.getSQLState())) {
                 // This code represents "Table/View/... already exists"
@@ -183,4 +182,32 @@ public class DBUtils {
         }
     }
 
+    public static DataSource connectToDB(){
+        Properties prop = new Properties();
+        String propFileName = "config.properties";
+
+        InputStream inputStream = CarManager.class.getClassLoader().getResourceAsStream(propFileName);
+
+        if (inputStream != null) {
+            try {
+                prop.load(inputStream);
+            } catch (IOException ex){
+                log.log(Level.SEVERE, "Cannot load property from input stream.");
+                throw new ServiceFailureException("Cannot load property from input stream.");
+            }
+        } else {
+            log.log(Level.SEVERE, "property file '" + propFileName + "' not found in the classpath");
+            throw new ServiceFailureException("property file '" + propFileName + "' not found in the classpath");
+        }
+
+        BasicDataSource bds = new BasicDataSource();
+        bds.setDriverClassName(prop.getProperty("DBDriverClassName"));
+        System.out.println(prop.getProperty("DBDriverClassName"));
+        bds.setUrl(prop.getProperty("DBUrl") + prop.getProperty("DBName"));
+        //bds.setUsername(prop.getProperty("DBUsername"));
+        //bds.setPassword(prop.getProperty("DBPassword"));
+        log.log(Level.INFO, "Connection to DB successful");
+
+        return bds;
+    }
 }

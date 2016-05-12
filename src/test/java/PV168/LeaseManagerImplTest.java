@@ -80,7 +80,7 @@ public class LeaseManagerImplTest {
                     + "DATETO DATE,"
                     + "PRICE DECIMAL)").executeUpdate();
         }
-        manager = new LeaseManagerImpl(Clock.systemUTC(), ds);
+        manager = new LeaseManagerImpl( ds);
         managercar=new CarManagerImpl(ds);
         managercust=new CustomerManagerImpl(ds);
     }

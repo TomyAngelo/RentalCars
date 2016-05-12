@@ -19,6 +19,7 @@ public class Car {
         this.model = model;
         this.price = price;
         this.numberOfKM = numberOfKM;
+        this.isBorrowed=false;
     }
     public Car(){
 

@@ -20,7 +20,7 @@ public class LeaseManagerImpl implements LeaseManager {
     private CustomerManagerImpl customerManager;
     private CarManagerImpl carManager;
 
-    public LeaseManagerImpl(Clock clock,DataSource dataSource) {
+    public LeaseManagerImpl(DataSource dataSource) {
         setDataSource(dataSource);
         customerManager = new CustomerManagerImpl(dataSource);
         carManager = new CarManagerImpl(dataSource);
